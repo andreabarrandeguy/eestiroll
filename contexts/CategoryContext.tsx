@@ -1,18 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageService } from '@/services/storage';
+import { CategoryContextType } from '@/types';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
-const STORAGE_KEY = '@selected_categories';
-
-interface CategoryContextType {
-  selectedCategories: string[];
-  toggleCategory: (category: string) => void;
-  isLoading: boolean;
-}
 
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['PRONOUN', 'VERB', 'NOUN']); // ← Cambiar aquí
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['PRONOUN', 'VERB', 'NOUN']);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,9 +14,9 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
   const loadCategories = async () => {
     try {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      const saved = await StorageService.loadCategories();
       if (saved) {
-        setSelectedCategories(JSON.parse(saved));
+        setSelectedCategories(saved);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -34,7 +27,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
   const toggleCategory = async (category: string) => {
     setSelectedCategories(prev => {
-      // Si es la única categoría seleccionada, no permitir deseleccionarla
+      // If it's the only selected category, don't allow deselecting it
       if (prev.length === 1 && prev.includes(category)) {
         return prev;
       }
@@ -43,8 +36,8 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
         ? prev.filter(c => c !== category)
         : [...prev, category];
       
-      // Guardar en AsyncStorage
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newCategories));
+      // Save to storage using service
+      StorageService.saveCategories(newCategories);
       
       return newCategories;
     });

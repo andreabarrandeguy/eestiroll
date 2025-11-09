@@ -1,17 +1,18 @@
-import { Colors } from '@/constants/Colors';
 import { useRandom } from '@/contexts/RandomContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useRef } from 'react';
-import { Animated, Image, Pressable, StyleSheet, View } from 'react-native'; // ← Agregué View
+import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
 
 export default function TabLayout() {
   const router = useRouter();
   const { triggerRandom } = useRandom();
+  const { theme } = useTheme();
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   const handleDicePress = () => {
-    // Animación de sacudida
+    // Shake animation sequence
     Animated.sequence([
       Animated.timing(shakeAnim, {
         toValue: 10,
@@ -44,17 +45,22 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.yellow,
-        tabBarInactiveTintColor: Colors.white,
+        tabBarActiveTintColor: theme.yellow,
+        tabBarInactiveTintColor: theme.text,
         tabBarStyle: {
-          backgroundColor: Colors.black,
-          borderTopColor: Colors.black,
+          backgroundColor: theme.background,
+          borderTopColor: theme.background,
+          borderTopWidth: 0,
           paddingBottom: 90,
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 0,
         },
         headerStyle: {
-          backgroundColor: Colors.black,
+          backgroundColor: theme.background,
         },
-        headerTintColor: Colors.white,
+        headerTintColor: theme.text,
         headerShown: false,
         tabBarShowLabel: false,
       }}>
@@ -66,8 +72,8 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               <Ionicons 
                 name="settings-outline" 
-                size={40} // ← Ahora puedes aumentar el tamaño sin que se corte
-                color={focused ? Colors.yellow : Colors.white} 
+                size={40}
+                color={focused ? theme.yellow : theme.text} 
               />
             </View>
           ),
@@ -112,8 +118,8 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               <Ionicons 
                 name="time-outline" 
-                size={40} // ← Ahora puedes aumentar el tamaño sin que se corte
-                color={focused ? Colors.yellow : Colors.white} 
+                size={40}
+                color={focused ? theme.yellow : theme.text} 
               />
             </View>
           ),
@@ -125,8 +131,8 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 40,  // ← La "caja" que contiene el icono
-    height: 40, // ← Ajusta estos valores según necesites
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },

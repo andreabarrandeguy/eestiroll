@@ -1,7 +1,14 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 
-export function WordCard({ word, category, color, refreshKey }) {
+interface WordCardProps {
+  word: string;
+  category: string;
+  color: string;
+  refreshKey: number;
+}
+
+export const WordCard = React.memo(({ word, category, color, refreshKey }: WordCardProps) => {
   const translateY = useRef(new Animated.Value(-20)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -38,12 +45,12 @@ export function WordCard({ word, category, color, refreshKey }) {
       <Text style={styles.cardText}>{word}</Text>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
-    padding: 15,
-    marginBottom: 10,
+    padding: 10,
+    marginBottom: 5,
     borderRadius: 12
   },
   categoryText: {
