@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 
 import { CategoryProvider } from '@/contexts/CategoryContext';
 import { HistoryProvider } from '@/contexts/HistoryContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { RandomProvider } from '@/contexts/RandomContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -18,19 +19,20 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RandomProvider>
-        <CategoryProvider>
-          <HistoryProvider>
-            <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </Stack>
-              <StatusBar style="auto" />
-            </NavigationThemeProvider>
-          </HistoryProvider>
-        </CategoryProvider>
-      </RandomProvider>
+      <LanguageProvider>
+        <RandomProvider>
+          <CategoryProvider>
+            <HistoryProvider>
+              <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+                <StatusBar style="auto" />
+              </NavigationThemeProvider>
+            </HistoryProvider>
+          </CategoryProvider>
+        </RandomProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

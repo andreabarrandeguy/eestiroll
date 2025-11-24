@@ -1,29 +1,30 @@
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslations } from '@/hooks/useTranslations';
+import { categoryColorMap } from '@/utils/wordData';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function HistoryScreen() {
   const { history } = useHistory();
   const { theme } = useTheme();
+  const { t } = useTranslations();
 
   return (
-    <ScreenContainer title="History">
+    <ScreenContainer title={t('history')}>
       {history.length === 0 ? (
-        <Text style={[styles.emptyText, { color: theme.text }]}>No history yet</Text>
+        <Text style={[styles.emptyText, { color: theme.text }]}>
+          {t('noHistoryYet')}
+        </Text>
       ) : (
         history.map((entry, index) => (
-          <View key={index} style={[styles.entryContainer, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.entryNumber, { color: theme.text }]}>#{history.length - index}</Text>
-            
-            <Text style={[styles.wordsTitle, { color: theme.text }]}>Words:</Text>
-            {entry.words.map((item, i) => (
-              <Text key={i} style={[styles.wordText, { color: theme.text }]}>
-                {item.category}: {item.word}
-              </Text>
-            ))}
-            
-            <Text style={[styles.sentenceTitle, { color: theme.text }]}>Sentence:</Text>
+          <View 
+            key={index} 
+            style={[
+              styles.entryContainer, 
+              { backgroundColor: theme.cardBackground }
+            ]}
+          >
             <Text style={[
               styles.sentenceText,
               { 
@@ -32,8 +33,24 @@ export default function HistoryScreen() {
                 opacity: entry.sentence ? 1 : 0.5 
               }
             ]}>
-              {entry.sentence || '(empty)'}
+              {entry.sentence || '(no sentence)'}
             </Text>
+            
+            <View style={styles.wordsGrid}>
+              {entry.words.map((item, i) => (
+                <View 
+                  key={i} 
+                  style={[
+                    styles.wordChip,
+                    { backgroundColor: categoryColorMap[item.category] }
+                  ]}
+                >
+                  <Text style={styles.wordChipText}>
+                    {item.word}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         ))
       )}
@@ -49,34 +66,29 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   entryContainer: {
-    padding: 15,
+    padding: 16,
     borderRadius: 12,
-    marginBottom: 15,
-  },
-  entryNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  wordsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  wordText: {
-    fontSize: 12,
-    opacity: 0.8,
-    marginLeft: 10,
-  },
-  sentenceTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
+    marginBottom: 12,
   },
   sentenceText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    lineHeight: 24,
+  },
+  wordsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  wordChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  wordChipText: {
     fontSize: 14,
-    marginLeft: 10,
+    fontWeight: '600',
+    color: '#000',
   },
 });

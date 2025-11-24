@@ -1,12 +1,12 @@
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslations } from '@/hooks/useTranslations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-// Reusable component for settings rows
 function SettingRow({ 
   icon, 
   label, 
@@ -39,26 +39,23 @@ function SettingRow({
 export default function ConfigScreen() {
   const router = useRouter();
   const { theme, isDark, toggleTheme } = useTheme();
-  
-  // Temporary state - TODO: Move to context when implementing real functionality
-  const [language, setLanguage] = useState('English');
+  const { currentLanguageOption } = useLanguage();
+  const { t } = useTranslations();
 
   const handleCategoriesPress = () => {
     router.push('/categories');
   };
 
   const handleLanguagePress = () => {
-    // TODO: Open modal or navigate to language selection screen
-    console.log('Open language selector');
+    router.push('/language');
   };
 
   return (
-    <ScreenContainer title="Configuration">
+    <ScreenContainer title={t('configuration')}>
       <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
-        {/* Categories - navigates to another screen */}
         <SettingRow
           icon="grid-outline"
-          label="Categories"
+          label={t('categories')}
           onPress={handleCategoriesPress}
           theme={theme}
           rightComponent={
@@ -68,10 +65,9 @@ export default function ConfigScreen() {
         
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-        {/* Dark Mode - direct toggle */}
         <SettingRow
           icon="moon-outline"
-          label="Dark Mode"
+          label={t('darkMode')}
           theme={theme}
           rightComponent={
             <Switch
@@ -85,22 +81,22 @@ export default function ConfigScreen() {
         
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         
-        {/* Language - navigates to selector */}
         <SettingRow
           icon="language-outline"
-          label="Language"
+          label={t('language')}
           onPress={handleLanguagePress}
           theme={theme}
           rightComponent={
             <View style={styles.settingRight}>
-              <Text style={[styles.settingValue, { color: theme.iconInactive }]}>{language}</Text>
+              <Text style={[styles.settingValue, { color: theme.iconInactive }]}>
+                {currentLanguageOption.nativeName}
+              </Text>
               <Ionicons name="chevron-forward" size={20} color={theme.iconInactive} />
             </View>
           }
         />
       </View>
 
-      {/* Bottom spacing */}
       <View style={{ height: 40 }} />
     </ScreenContainer>
   );

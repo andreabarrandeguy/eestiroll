@@ -1,6 +1,7 @@
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { useCategories } from '@/contexts/CategoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslations } from '@/hooks/useTranslations';
 import { categories, categoryColorMap } from '@/utils/wordData';
 import { Stack } from 'expo-router';
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -8,13 +9,16 @@ import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 export default function CategoriesScreen() {
   const { selectedCategories, toggleCategory, isLoading } = useCategories();
   const { theme } = useTheme();
+  const { t } = useTranslations();
 
   if (isLoading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <ScreenContainer title="Categories">
-          <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
+        <ScreenContainer title={t('categories')}>
+          <Text style={[styles.loadingText, { color: theme.text }]}>
+            {t('loading')}...
+          </Text>
         </ScreenContainer>
       </>
     );
@@ -23,7 +27,7 @@ export default function CategoriesScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScreenContainer title="Categories" showBackButton>
+      <ScreenContainer title={t('categories')} showBackButton>
         <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
           {categories.map((category, index) => (
             <View key={category}>
@@ -34,7 +38,9 @@ export default function CategoriesScreen() {
               >
                 <View style={styles.settingLeft}>
                   <View style={[styles.categoryDot, { backgroundColor: categoryColorMap[category] }]} />
-                  <Text style={[styles.categoryLabel, { color: theme.text }]}>{category}</Text>
+                  <Text style={[styles.categoryLabel, { color: theme.text }]}>
+                    {t(category)}
+                  </Text>
                 </View>
                 <Switch
                   value={selectedCategories.includes(category)}
@@ -82,7 +88,6 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 16,
     fontWeight: '500',
-    textTransform: 'capitalize'
   },
   divider: {
     height: 1,

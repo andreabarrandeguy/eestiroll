@@ -49,7 +49,10 @@ export function ScreenContainer({
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {scrollable ? (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+        >
           {content}
         </ScrollView>
       ) : (
@@ -65,6 +68,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   content: {
     padding: 20

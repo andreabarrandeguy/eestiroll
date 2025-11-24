@@ -1,14 +1,17 @@
 import { WordCard } from '@/components/WordCard';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
+import { useTranslations } from '@/hooks/useTranslations';
 import { categoryColorMap } from '@/utils/wordData';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
-import { Keyboard, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslations();
   const { 
     words, 
     refreshKey, 
@@ -16,6 +19,8 @@ export default function HomeScreen() {
     setSentence, 
     handleSend 
   } = useRandomWords();
+
+  const use3Columns = words.length >= 9;
 
   useFocusEffect(
     useCallback(() => {
@@ -25,17 +30,28 @@ export default function HomeScreen() {
     }, [])
   );
 
+  const handleDoubleTap = (word: string) => {
+    const newSentence = sentence ? `${sentence}${word}` : word;
+    setSentence(newSentence);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.content}>
-          <Text style={[styles.title, { color: theme.text }]}>Randomize</Text>
+          <Text style={[styles.title, { color: theme.text }]}>
+            Randomize
+          </Text>
 
           {words.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyTextBold, { color: theme.text }]}>NB!</Text>
+              <Text style={[styles.emptyTextBold, { color: theme.text }]}>
+                {t('noCategoriesSelected')}
+              </Text>
               <View style={styles.configHintContainer}>
-                <Text style={[styles.emptyText, { color: theme.text }]}>Customize categories in </Text>
+                <Text style={[styles.emptyText, { color: theme.text }]}>
+                  {t('customizeCategories')} 
+                </Text>
                 <Ionicons name="settings-outline" size={16} color={theme.text} style={{ opacity: 0.6 }} />
               </View>
             </View>
@@ -45,12 +61,21 @@ export default function HomeScreen() {
             <>
               <View style={styles.wordsContainer}>
                 {words.map((item, index) => (
-                  <View key={index} style={styles.wordWrapper}>
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.wordWrapper,
+                      { width: use3Columns ? '32%' : '48%' }
+                    ]}
+                  >
                     <WordCard 
                       word={item.word} 
                       category={item.category}
                       color={categoryColorMap[item.category]}
                       refreshKey={refreshKey}
+                      uppercaseCategory={true}
+                      compact={use3Columns}
+                      onDoubleTap={handleDoubleTap}
                     />
                   </View>
                 ))}
@@ -66,7 +91,7 @@ export default function HomeScreen() {
               ]}>
                 <TextInput
                   style={[styles.input, { color: theme.inputText }]}
-                  placeholder="Enter your sentence..."
+                  placeholder={t('enterSentence')}
                   placeholderTextColor={theme.iconInactive}
                   value={sentence}
                   onChangeText={setSentence}
@@ -74,7 +99,10 @@ export default function HomeScreen() {
                   multiline
                 />
                 {sentence.length > 0 && (
-                  <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                  <TouchableOpacity 
+                    style={styles.sendButton} 
+                    onPress={handleSend}
+                  >
                     <Ionicons name="paper-plane" size={20} color={theme.inputText} />
                   </TouchableOpacity>
                 )}
@@ -94,7 +122,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20
+    padding: 20,
+    paddingBottom: 120
   },
   title: {
     fontSize: 24,
@@ -127,7 +156,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   wordWrapper: {
-    width: '48%',
     marginBottom: 8
   },
   inputContainer: {
@@ -137,14 +165,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 50,
   },
   input: {
     flex: 1,
     fontSize: 16,
     maxHeight: 120,
+    paddingRight: 10,
+    marginBottom: 3,
   },
   sendButton: {
-    marginLeft: 10,
-    padding: 8,
+    alignSelf: 'flex-end',
+    marginBottom: 3,
   }
 });

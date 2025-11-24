@@ -1,4 +1,19 @@
 // Word related types
+export interface WordTranslations {
+    et: string;  // Estonian
+    es: string;  // Spanish
+    en: string;  // English
+    ru: string;  // Russian
+}
+
+export type Language = 'en' | 'es' | 'ru';
+
+export interface LanguageOption {
+    code: Language;
+    name: string;
+    nativeName: string;
+}
+
 export interface Word {
     word: string;
     category: string;

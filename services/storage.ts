@@ -1,5 +1,5 @@
 import { ThemeMode } from '@/constants/Colors';
-import { HistoryEntry } from '@/types';
+import { HistoryEntry, Language } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage keys
@@ -7,6 +7,7 @@ const KEYS = {
     CATEGORIES: '@selected_categories',
     HISTORY: '@history_v1',
     THEME: '@theme_mode',
+    LANGUAGE: '@language',
 } as const;
 
 /**
@@ -73,10 +74,30 @@ export const StorageService = {
         }
     },
 
+    // Language operations
+    async saveLanguage(language: Language): Promise<void> {
+        try {
+            await AsyncStorage.setItem(KEYS.LANGUAGE, language);
+        } catch (error) {
+            console.error('Error saving language:', error);
+            throw error;
+        }
+    },
+
+    async loadLanguage(): Promise<Language | null> {
+        try {
+            const saved = await AsyncStorage.getItem(KEYS.LANGUAGE);
+            return saved as Language | null;
+        } catch (error) {
+            console.error('Error loading language:', error);
+            return null;
+        }
+    },
+
     // Clear all data (useful for debugging or user logout)
     async clearAll(): Promise<void> {
         try {
-            await AsyncStorage.multiRemove([KEYS.CATEGORIES, KEYS.HISTORY, KEYS.THEME]);
+            await AsyncStorage.multiRemove([KEYS.CATEGORIES, KEYS.HISTORY, KEYS.THEME, KEYS.LANGUAGE]);
         } catch (error) {
             console.error('Error clearing storage:', error);
             throw error;
