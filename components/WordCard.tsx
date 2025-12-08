@@ -1,7 +1,7 @@
 import { WordModal } from '@/components/WordModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import { allWords } from '@/utils/wordData';
+import { fetchContent } from '@/services/api';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
@@ -14,6 +14,30 @@ interface WordCardProps {
   compact?: boolean;
   onDoubleTap?: (word: string) => void;
   onLongPress?: () => void;
+}
+
+// Cache global de traducciones
+let cachedTranslations: Record<string, any[]> = {};
+
+// Función para cargar traducciones desde la API
+export async function loadTranslations() {
+  try {
+    const content = await fetchContent();
+    cachedTranslations = content.data.words;
+  } catch (error) {
+    console.error('Error loading translations from API');
+    // Fallback a wordData.ts
+    const { allWords } = require('@/utils/wordData');
+    cachedTranslations = allWords;
+  }
+}
+
+// Helper to get translation
+export function getWordTranslation(word: string, category: string, language: string): string {
+  const wordList = cachedTranslations[category] || [];
+  const wordObj = wordList.find((w: any) => w.word === word);
+  if (!wordObj) return word;
+  return wordObj.translations?.[language] || word;
 }
 
 export const WordCard = React.memo(({ 
@@ -56,12 +80,12 @@ export const WordCard = React.memo(({
   const displayText = uppercaseCategory ? categoryText.toUpperCase() : categoryText;
 
   const getTranslation = () => {
-    const wordList = allWords[category];
-    const wordObj = wordList.find(w => w.et === word);
+    const wordList = cachedTranslations[category] || [];
+    const wordObj = wordList.find((w: any) => w.word === word);
     
     if (!wordObj) return word;
     
-    return wordObj[language];
+    return wordObj.translations?.[language] || word;
   };
 
   const handlePress = () => {

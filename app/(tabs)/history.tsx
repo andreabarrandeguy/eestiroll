@@ -1,14 +1,28 @@
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { getWordTranslation } from '@/components/WordCard';
+import { WordModal } from '@/components/WordModal';
 import { useHistory } from '@/contexts/HistoryContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
+import { Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function HistoryScreen() {
   const { history } = useHistory();
   const { theme } = useTheme();
   const { t } = useTranslations();
+  const { language } = useLanguage();
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
+
+  const handleWordPress = (word: Word) => {
+    setSelectedWord(word);
+    setModalVisible(true);
+  };
 
   return (
     <ScreenContainer title={t('history')}>
@@ -38,8 +52,9 @@ export default function HistoryScreen() {
             
             <View style={styles.wordsGrid}>
               {entry.words.map((item, i) => (
-                <View 
+                <Pressable 
                   key={i} 
+                  onPress={() => handleWordPress(item)}
                   style={[
                     styles.wordChip,
                     { backgroundColor: categoryColorMap[item.category] }
@@ -48,11 +63,22 @@ export default function HistoryScreen() {
                   <Text style={styles.wordChipText}>
                     {item.word}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
         ))
+      )}
+
+      {selectedWord && (
+        <WordModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          estonianWord={selectedWord.word}
+          translation={getWordTranslation(selectedWord.word, selectedWord.category, language)}
+          category={t(selectedWord.category as any).toUpperCase()}
+          cardColor={categoryColorMap[selectedWord.category]}
+        />
       )}
     </ScreenContainer>
   );

@@ -1,3 +1,4 @@
+import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Language, LanguageOption } from '@/types';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -18,21 +19,36 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [availableLanguages, setAvailableLanguages] = useState<LanguageOption[]>([]);
   const [language, setLanguageState] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadLanguage();
+    loadContent();
   }, []);
 
-  const loadLanguage = async () => {
+  const loadContent = async () => {
     try {
+      const content = await fetchContent();
+      
+      // Mapear languages desde la API
+      const languages = content.data.languages.map((l: any) => ({
+        code: l.code,
+        name: l.name,
+        nativeName: l.native_name
+      }));
+      
+      setAvailableLanguages(languages);
+      
+      // Cargar idioma guardado
       const saved = await StorageService.loadLanguage();
       if (saved) {
         setLanguageState(saved);
       }
     } catch (error) {
-      console.error('Error loading language:', error);
+      console.error('Error loading languages, using fallback:', error);
+      // Usar fallback hardcodeado
+      setAvailableLanguages(AVAILABLE_LANGUAGES);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +64,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const currentLanguageOption = AVAILABLE_LANGUAGES.find(l => l.code === language) || AVAILABLE_LANGUAGES[0];
+  const currentLanguageOption = availableLanguages.find(l => l.code === language) || availableLanguages[0];
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, currentLanguageOption, isLoading }}>

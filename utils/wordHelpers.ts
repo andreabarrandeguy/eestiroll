@@ -1,28 +1,46 @@
-import { allWords, categories } from './wordData';
+import { fetchContent } from '@/services/api';
+import { allWords as fallbackWords } from './wordData';
+
+let cachedWords: Record<string, any[]> = {};
+let isLoaded = false;
+
+export async function loadWordsFromAPI() {
+    try {
+        const content = await fetchContent();
+        cachedWords = content?.data?.words ?? fallbackWords;
+        isLoaded = true;
+    } catch (error) {
+        console.error('Error loading words from API, using fallback:', error);
+        cachedWords = fallbackWords;
+        isLoaded = true;
+    }
+}
 
 export function getRandomWords(
-    selectedCategories?: string[],
+    selectedCategories: string[],
     usedWords: string[] = []
 ) {
-    const categoriesToUse = selectedCategories && selectedCategories.length > 0
-        ? selectedCategories
-        : categories;
+    // Use fallback if not loaded yet
+    const words = isLoaded ? cachedWords : fallbackWords;
 
-    return categoriesToUse.map(cat => {
-        const wordList = allWords[cat];
+    return selectedCategories.map(categoryCode => {
+        const wordList = words[categoryCode] || [];
 
-        // Filter out already used words (comparing Estonian word)
-        const availableWords = wordList.filter(wordObj => !usedWords.includes(wordObj.et));
+        const availableWords = wordList.filter(
+            (wordObj: any) => !usedWords.includes(wordObj.word)
+        );
 
-        // If all words have been used, use the complete list
         const finalList = availableWords.length > 0 ? availableWords : wordList;
 
-        const randomIndex = Math.floor(Math.random() * finalList.length);
-        const selectedWord = finalList[randomIndex];
+        // Better fallback than showing "error"
+        if (finalList.length === 0) {
+            return { word: '—', category: categoryCode };
+        }
 
+        const randomIndex = Math.floor(Math.random() * finalList.length);
         return {
-            word: selectedWord.et,  // Extract only the Estonian word for display
-            category: cat
+            word: finalList[randomIndex].word,
+            category: categoryCode
         };
     });
 }

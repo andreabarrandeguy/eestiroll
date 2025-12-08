@@ -2,7 +2,7 @@ import { StorageService } from '@/services/storage';
 import { HistoryContextType, HistoryEntry, Word } from '@/types';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const MAX_HISTORY = 5;
+const MAX_HISTORY = 27;
 
 const HistoryContext = createContext<HistoryContextType | undefined>(undefined);
 
