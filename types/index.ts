@@ -36,8 +36,12 @@ export interface CategoryCardProps {
 
 // Context types
 export interface CategoryContextType {
-    selectedCategories: string[];
-    toggleCategory: (category: string) => void;
+    categoryCount: number;
+    excludedCategories: string[];
+    setCategoryCount: (count: number) => void;
+    toggleExcluded: (category: string) => void;
+    availableCategories: string[];
+    maxExclusions: number;
     isLoading: boolean;
 }
 
@@ -45,11 +49,15 @@ export interface HistoryEntry {
     words: Word[];
     sentence: string;
     timestamp: number;
+    note?: string;
 }
 
 export interface HistoryContextType {
     history: HistoryEntry[];
     addEntry: (words: Word[], sentence: string) => void;
+    deleteEntry: (timestamp: number) => void;
+    deleteMultiple: (timestamps: number[]) => void;
+    updateNote: (timestamp: number, note: string) => void;
     getUsedWords: () => string[];
 }
 

@@ -155,10 +155,15 @@ export const WordCard = React.memo(({
           ]}>
             {displayText}
           </Text>
-          <Text style={[
-            styles.cardText,
-            compact && styles.cardTextCompact
-          ]}>
+          <Text 
+            style={[
+              styles.cardText,
+              compact && styles.cardTextCompact
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {word}
           </Text>
         </Animated.View>

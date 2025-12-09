@@ -10,7 +10,17 @@ interface Word {
     category: string;
 }
 
-const MAX_RECENT_WORDS = 25; // Track last 25 words to avoid repetition
+const MAX_RECENT_WORDS = 25;
+
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
 
 export function useRandomWords() {
     const [words, setWords] = useState<Word[]>([]);
@@ -19,10 +29,14 @@ export function useRandomWords() {
     const recentWords = useRef<string[]>([]);
 
     const { randomTrigger } = useRandom();
-    const { selectedCategories } = useCategories();
+    const { categoryCount, availableCategories } = useCategories();
     const { addEntry } = useHistory();
 
     const generateNewWords = () => {
+        // Select random categories from available ones
+        const shuffledCategories = shuffleArray(availableCategories);
+        const selectedCategories = shuffledCategories.slice(0, categoryCount);
+
         // Generate new words avoiding recently used ones
         const newWords = getRandomWords(selectedCategories, recentWords.current);
         setWords(newWords);
@@ -50,7 +64,7 @@ export function useRandomWords() {
         if (randomTrigger > 0) {
             generateNewWords();
         }
-    }, [randomTrigger, selectedCategories]);
+    }, [randomTrigger, categoryCount, availableCategories]);
 
     return {
         words,

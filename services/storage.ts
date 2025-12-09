@@ -3,7 +3,8 @@ import { HistoryEntry, Language } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-    CATEGORIES: '@selected_categories',
+    CATEGORY_COUNT: '@category_count',
+    EXCLUDED_CATEGORIES: '@excluded_categories',
     HISTORY: '@history_v1',
     THEME: '@theme_mode',
     LANGUAGE: '@language',
@@ -11,7 +12,8 @@ const KEYS = {
 
 // Default values for fallback
 const DEFAULTS = {
-    categories: ['PRONOUN', 'VERB', 'NOUN'] as string[],
+    categoryCount: 3,
+    excludedCategories: [] as string[],
     history: [] as HistoryEntry[],
     theme: 'dark' as ThemeMode,
     language: 'en' as Language,
@@ -35,26 +37,49 @@ async function withRetry<T>(
 }
 
 export const StorageService = {
-    // Categories
-    async saveCategories(categories: string[]): Promise<boolean> {
+    // Category Count
+    async saveCategoryCount(count: number): Promise<boolean> {
         try {
             await withRetry(() =>
-                AsyncStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories))
+                AsyncStorage.setItem(KEYS.CATEGORY_COUNT, String(count))
             );
             return true;
         } catch (error) {
-            console.error('Error saving categories:', error);
+            console.error('Error saving category count:', error);
             return false;
         }
     },
 
-    async loadCategories(): Promise<string[]> {
+    async loadCategoryCount(): Promise<number> {
         try {
-            const saved = await withRetry(() => AsyncStorage.getItem(KEYS.CATEGORIES));
-            return saved ? JSON.parse(saved) : DEFAULTS.categories;
+            const saved = await withRetry(() => AsyncStorage.getItem(KEYS.CATEGORY_COUNT));
+            return saved ? parseInt(saved, 10) : DEFAULTS.categoryCount;
         } catch (error) {
-            console.error('Error loading categories:', error);
-            return DEFAULTS.categories;
+            console.error('Error loading category count:', error);
+            return DEFAULTS.categoryCount;
+        }
+    },
+
+    // Excluded Categories
+    async saveExcludedCategories(categories: string[]): Promise<boolean> {
+        try {
+            await withRetry(() =>
+                AsyncStorage.setItem(KEYS.EXCLUDED_CATEGORIES, JSON.stringify(categories))
+            );
+            return true;
+        } catch (error) {
+            console.error('Error saving excluded categories:', error);
+            return false;
+        }
+    },
+
+    async loadExcludedCategories(): Promise<string[]> {
+        try {
+            const saved = await withRetry(() => AsyncStorage.getItem(KEYS.EXCLUDED_CATEGORIES));
+            return saved ? JSON.parse(saved) : DEFAULTS.excludedCategories;
+        } catch (error) {
+            console.error('Error loading excluded categories:', error);
+            return DEFAULTS.excludedCategories;
         }
     },
 

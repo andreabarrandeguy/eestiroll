@@ -5,7 +5,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { categoryColorMap } from '@/utils/wordData';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,6 +20,8 @@ export default function HomeScreen() {
     handleSend 
   } = useRandomWords();
 
+  const [cursorPosition, setCursorPosition] = useState(0);
+
   const use3Columns = words.length >= 9;
 
   useFocusEffect(
@@ -31,8 +33,15 @@ export default function HomeScreen() {
   );
 
   const handleDoubleTap = (word: string) => {
-    const newSentence = sentence ? `${sentence}${word}` : word;
+    const before = sentence.slice(0, cursorPosition);
+    const after = sentence.slice(cursorPosition);
+    const newSentence = before + word + after;
     setSentence(newSentence);
+    setCursorPosition(cursorPosition + word.length);
+  };
+
+  const handleSelectionChange = (event: any) => {
+    setCursorPosition(event.nativeEvent.selection.start);
   };
 
   return (
@@ -95,6 +104,7 @@ export default function HomeScreen() {
                   placeholderTextColor={theme.iconInactive}
                   value={sentence}
                   onChangeText={setSentence}
+                  onSelectionChange={handleSelectionChange}
                   maxLength={140}
                   multiline
                 />

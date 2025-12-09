@@ -3,11 +3,20 @@ import { useCategories } from '@/contexts/CategoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { categories, categoryColorMap } from '@/utils/wordData';
+import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CategoriesScreen() {
-  const { selectedCategories, toggleCategory, isLoading } = useCategories();
+  const { 
+    categoryCount, 
+    excludedCategories, 
+    setCategoryCount, 
+    toggleExcluded,
+    availableCategories,
+    maxExclusions,
+    isLoading 
+  } = useCategories();
   const { theme } = useTheme();
   const { t } = useTranslations();
 
@@ -24,34 +33,96 @@ export default function CategoriesScreen() {
     );
   }
 
+  const canDecrease = categoryCount > 1;
+  const canIncrease = categoryCount < availableCategories.length;
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenContainer title={t('categories')} showBackButton>
-        <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
-          {categories.map((category, index) => (
-            <View key={category}>
-              <TouchableOpacity 
-                style={styles.categoryRow}
-                onPress={() => toggleCategory(category)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.settingLeft}>
-                  <View style={[styles.categoryDot, { backgroundColor: categoryColorMap[category] }]} />
-                  <Text style={[styles.categoryLabel, { color: theme.text }]}>
-                    {t(category)}
-                  </Text>
-                </View>
-                <Switch
-                  value={selectedCategories.includes(category)}
-                  onValueChange={() => toggleCategory(category)}
-                  trackColor={{ false: '#767577', true: categoryColorMap[category] }}
-                  thumbColor='#f4f3f4'
-                />
-              </TouchableOpacity>
-              {index < categories.length - 1 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
-            </View>
-          ))}
+        {/* Category Count Stepper */}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            {t('categoriesPerRound')}
+          </Text>
+          <View style={styles.stepperContainer}>
+            <TouchableOpacity 
+              onPress={() => setCategoryCount(categoryCount - 1)}
+              disabled={!canDecrease}
+              style={[
+                styles.stepperButton, 
+                { backgroundColor: theme.background, opacity: canDecrease ? 1 : 0.3 }
+              ]}
+            >
+              <Ionicons name="remove" size={24} color={theme.text} />
+            </TouchableOpacity>
+            
+            <Text style={[styles.stepperValue, { color: theme.text }]}>
+              {categoryCount}
+            </Text>
+            
+            <TouchableOpacity 
+              onPress={() => setCategoryCount(categoryCount + 1)}
+              disabled={!canIncrease}
+              style={[
+                styles.stepperButton, 
+                { backgroundColor: theme.background, opacity: canIncrease ? 1 : 0.3 }
+              ]}
+            >
+              <Ionicons name="add" size={24} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.hint, { color: theme.iconInactive }]}>
+            {t('minMax').replace('{min}', '1').replace('{max}', String(availableCategories.length))}
+          </Text>
+        </View>
+
+        {/* Excluded Categories */}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, marginTop: 20 }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            {t('excludeCategories')}
+          </Text>
+          
+          {categories.map((category, index) => {
+            const isExcluded = excludedCategories.includes(category);
+            const canToggle = isExcluded || excludedCategories.length < maxExclusions;
+            
+            return (
+              <View key={category}>
+                {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
+                <TouchableOpacity 
+                  style={[styles.categoryRow, { opacity: canToggle ? 1 : 0.4 }]}
+                  onPress={() => toggleExcluded(category)}
+                  disabled={!canToggle}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.categoryLeft}>
+                    <View style={[styles.categoryDot, { backgroundColor: categoryColorMap[category] }]} />
+                    <Text style={[
+                      styles.categoryLabel, 
+                      { color: theme.text },
+                      isExcluded && styles.categoryLabelExcluded
+                    ]}>
+                      {t(category)}
+                    </Text>
+                  </View>
+                  <Ionicons 
+                    name={isExcluded ? "close-circle" : "checkmark-circle"} 
+                    size={24} 
+                    color={isExcluded ? "#E95A35" : theme.yellow} 
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+          
+          {maxExclusions > 0 && (
+            <Text style={[styles.exclusionHint, { color: theme.iconInactive }]}>
+              {t('maxExclusions')
+                .replace('{current}', String(excludedCategories.length))
+                .replace('{max}', String(maxExclusions))}
+            </Text>
+          )}
         </View>
       </ScreenContainer>
     </>
@@ -63,18 +134,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.6
   },
-  settingsGroup: {
+  section: {
     borderRadius: 12,
-    overflow: 'hidden'
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  stepperButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepperValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    minWidth: 50,
+    textAlign: 'center',
+  },
+  hint: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 12,
   },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  settingLeft: {
+  categoryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1
@@ -89,8 +188,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  categoryLabelExcluded: {
+    textDecorationLine: 'line-through',
+    opacity: 0.6,
+  },
   divider: {
     height: 1,
-    marginLeft: 50
-  }
+    marginLeft: 24
+  },
+  exclusionHint: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 16,
+  },
 });

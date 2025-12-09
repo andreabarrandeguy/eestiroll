@@ -7,57 +7,80 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['PRONOUN', 'VERB', 'NOUN']);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
+  const [categoryCount, setCategoryCountState] = useState(3);
+  const [excludedCategories, setExcludedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadContent();
   }, []);
 
-const loadContent = async () => {
-  try {
-    const content = await fetchContent();
-    
-    // Safe access with fallback
-    const categoryList = content?.data?.categories?.map((c: any) => c.code) ?? fallbackCategories;
-    setCategories(categoryList);
-    
-    // Load saved categories and validate they still exist
-    const saved = await StorageService.loadCategories();
-    if (saved && saved.length > 0) {
-      // Filter out categories that no longer exist
-      const validSaved = saved.filter(cat => categoryList.includes(cat));
-      setSelectedCategories(validSaved.length > 0 ? validSaved : ['VERB', 'NOUN']);
+  const loadContent = async () => {
+    try {
+      const content = await fetchContent();
+      const categoryList = content?.data?.categories?.map((c: any) => c.code) ?? fallbackCategories;
+      setAllCategories(categoryList);
+      
+      // Load saved settings
+      const savedCount = await StorageService.loadCategoryCount();
+      const savedExcluded = await StorageService.loadExcludedCategories();
+      
+      // Validate saved count doesn't exceed available categories
+      const maxCount = categoryList.length - savedExcluded.length;
+      setCategoryCountState(Math.min(savedCount, maxCount));
+      setExcludedCategories(savedExcluded.filter((cat: string) => categoryList.includes(cat)));
+    } catch (error) {
+      console.error('Error loading content, using fallback:', error);
+      setAllCategories([...fallbackCategories]);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Error loading content, using fallback:', error);
-    setCategories([...fallbackCategories]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-  const toggleCategory = async (category: string) => {
-    setSelectedCategories(prev => {
-      // If it's the only selected category, don't allow deselecting it
-      if (prev.length === 1 && prev.includes(category)) {
-        return prev;
+  const availableCategories = allCategories.filter(cat => !excludedCategories.includes(cat));
+  const maxExclusions = allCategories.length - categoryCount;
+
+  const setCategoryCount = async (count: number) => {
+    const validCount = Math.max(1, Math.min(count, availableCategories.length));
+    setCategoryCountState(validCount);
+    await StorageService.saveCategoryCount(validCount);
+  };
+
+  const toggleExcluded = async (category: string) => {
+    let newExcluded: string[];
+    
+    if (excludedCategories.includes(category)) {
+      // Remove from excluded
+      newExcluded = excludedCategories.filter(c => c !== category);
+    } else {
+      // Add to excluded (if allowed)
+      if (excludedCategories.length >= maxExclusions) {
+        return; // Can't exclude more
       }
-
-      const newCategories = prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category];
-      
-      // Save to storage using service
-      StorageService.saveCategories(newCategories);
-      
-      return newCategories;
-    });
+      newExcluded = [...excludedCategories, category];
+    }
+    
+    setExcludedCategories(newExcluded);
+    await StorageService.saveExcludedCategories(newExcluded);
+    
+    // Adjust count if necessary
+    const newAvailable = allCategories.length - newExcluded.length;
+    if (categoryCount > newAvailable) {
+      setCategoryCount(newAvailable);
+    }
   };
 
   return (
-    <CategoryContext.Provider value={{ selectedCategories, toggleCategory, isLoading }}>
+    <CategoryContext.Provider value={{ 
+      categoryCount, 
+      excludedCategories, 
+      setCategoryCount, 
+      toggleExcluded,
+      availableCategories,
+      maxExclusions,
+      isLoading 
+    }}>
       {children}
     </CategoryContext.Provider>
   );

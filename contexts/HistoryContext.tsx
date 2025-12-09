@@ -2,7 +2,7 @@ import { StorageService } from '@/services/storage';
 import { HistoryContextType, HistoryEntry, Word } from '@/types';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const MAX_HISTORY = 27;
+const MAX_HISTORY = 100;
 
 const HistoryContext = createContext<HistoryContextType | undefined>(undefined);
 
@@ -41,12 +41,49 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteEntry = async (timestamp: number) => {
+    const newHistory = history.filter(entry => entry.timestamp !== timestamp);
+    setHistory(newHistory);
+    
+    try {
+      await StorageService.saveHistory(newHistory);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+
+  const deleteMultiple = async (timestamps: number[]) => {
+    const newHistory = history.filter(entry => !timestamps.includes(entry.timestamp));
+    setHistory(newHistory);
+    
+    try {
+      await StorageService.saveHistory(newHistory);
+    } catch (error) {
+      console.error('Error deleting entries:', error);
+    }
+  };
+
+  const updateNote = async (timestamp: number, note: string) => {
+    const newHistory = history.map(entry => 
+      entry.timestamp === timestamp 
+        ? { ...entry, note: note.trim() || undefined }
+        : entry
+    );
+    setHistory(newHistory);
+    
+    try {
+      await StorageService.saveHistory(newHistory);
+    } catch (error) {
+      console.error('Error updating note:', error);
+    }
+  };
+
   const getUsedWords = () => {
     return history.flatMap(entry => entry.words.map(w => w.word));
   };
 
   return (
-    <HistoryContext.Provider value={{ history, addEntry, getUsedWords }}>
+    <HistoryContext.Provider value={{ history, addEntry, deleteEntry, deleteMultiple, updateNote, getUsedWords }}>
       {children}
     </HistoryContext.Provider>
   );
