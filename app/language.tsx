@@ -1,8 +1,8 @@
+import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { AVAILABLE_LANGUAGES, useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -38,7 +38,7 @@ export default function LanguageScreen() {
                   </Text>
                 </View>
                 {language === lang.code && (
-                  <Ionicons name="checkmark" size={24} color={theme.yellow} />
+                  <Icon name="checkmark" size={24} color={theme.yellow} />
                 )}
               </TouchableOpacity>
               {index < AVAILABLE_LANGUAGES.length - 1 && (

@@ -1,6 +1,6 @@
+import { Icon } from '@/components/Icon';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -9,20 +9,41 @@ interface WordModalProps {
   onClose: () => void;
   estonianWord: string;
   translation: string;
+  allTranslations: Record<string, string>;
+  currentLanguage: string;
   category: string;
   cardColor: string;
 }
+
+// Order of secondary langs depending on current lang
+const SECONDARY_LANGUAGES: Record<string, string[]> = {
+  en: ['es', 'ru'],
+  es: ['en', 'ru'],
+  ru: ['en', 'es'],
+};
+
+// Names of langs to show
+const LANGUAGE_NAMES: Record<string, Record<string, string>> = {
+  en: { en: 'English', es: 'Spanish', ru: 'Russian' },
+  es: { en: 'Inglés', es: 'Español', ru: 'Ruso' },
+  ru: { en: 'Английский', es: 'Испанский', ru: 'Русский' },
+};
 
 export function WordModal({ 
   visible, 
   onClose, 
   estonianWord, 
   translation, 
+  allTranslations,
+  currentLanguage,
   category,
   cardColor 
 }: WordModalProps) {
   const { theme } = useTheme();
   const { t } = useTranslations();
+
+  const secondaryLanguages = SECONDARY_LANGUAGES[currentLanguage] || ['en', 'es'];
+  const languageNames = LANGUAGE_NAMES[currentLanguage] || LANGUAGE_NAMES.en;
 
   return (
     <Modal
@@ -49,7 +70,7 @@ export function WordModal({
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons name="close" size={24} color={theme.text} />
+            <Icon name="close" size={24} color={theme.text} />
           </Pressable>
 
           <Text style={[styles.category, { color: cardColor }]}>
@@ -62,12 +83,27 @@ export function WordModal({
 
           <View style={[styles.divider, { backgroundColor: cardColor }]} />
 
+          {/* Main translation */}
           <Text style={[styles.translationLabel, { color: theme.text }]}>
             {t('translation')}:
           </Text>
           <Text style={[styles.translation, { color: theme.text }]}>
             {translation}
           </Text>
+
+          {/* Secondary translations */}
+          <View style={styles.secondaryTranslations}>
+            {secondaryLanguages.map((lang) => (
+              <View key={lang} style={styles.secondaryItem}>
+                <Text style={[styles.secondaryLabel, { color: theme.iconInactive }]}>
+                  {languageNames[lang]}:
+                </Text>
+                <Text style={[styles.secondaryText, { color: theme.text }]}>
+                  {allTranslations[lang] || estonianWord}
+                </Text>
+              </View>
+            ))}
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -130,5 +166,27 @@ const styles = StyleSheet.create({
   translation: {
     fontSize: 20,
     fontWeight: '500',
+    marginBottom: 20,
+  },
+  secondaryTranslations: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 16,
+    gap: 8,
+  },
+  secondaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  secondaryLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 70,
+  },
+  secondaryText: {
+    fontSize: 14,
+    fontWeight: '400',
+    opacity: 0.8,
   },
 });

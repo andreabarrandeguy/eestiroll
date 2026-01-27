@@ -1,10 +1,10 @@
+import { Icon } from '@/components/Icon';
 import { useRandom } from '@/contexts/RandomContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useRef } from 'react';
-import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function TabLayout() {
   const router = useRouter();
@@ -17,29 +17,76 @@ export default function TabLayout() {
       Animated.timing(shakeAnim, {
         toValue: 10,
         duration: 50,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnim, {
         toValue: -10,
         duration: 50,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnim, {
         toValue: 10,
         duration: 50,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnim, {
         toValue: 0,
         duration: 50,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
 
     router.push('/(tabs)');
-    setTimeout(() => {
-      triggerRandom();
-    }, 100);
+    triggerRandom();
+  };
+
+  const DiceImage = () => (
+    <Animated.View 
+      style={{
+        transform: [{ 
+          rotate: shakeAnim.interpolate({
+            inputRange: [-10, 10],
+            outputRange: ['-10deg', '10deg']
+          })
+        }]
+      }}
+    >
+      <Image 
+        source={require('@/assets/images/dice-static.png')}
+        style={styles.diceImage}
+        resizeMode="contain"
+      />
+    </Animated.View>
+  );
+
+  const TabIcon = ({ name, focused }: { name: 'settings-outline' | 'time-outline'; focused: boolean }) => {
+    if (Platform.OS === 'web') {
+      return (
+        <View style={styles.webIconContainer}>
+          <Icon 
+            name={name}
+            size={32}
+            color={focused ? theme.yellow : theme.text}
+          />
+        </View>
+      );
+    }
+    
+    return (
+      <BlurView
+        intensity={60}
+        tint={isDark ? 'dark' : 'light'}
+        style={styles.blurContainer}
+      >
+        <View style={styles.iconContainer}>
+          <Icon 
+            name={name}
+            size={40}
+            color={focused ? theme.yellow : theme.text}
+          />
+        </View>
+      </BlurView>
+    );
   };
 
   return (
@@ -57,6 +104,14 @@ export default function TabLayout() {
           shadowOpacity: 0,
           shadowOffset: { width: 0, height: 0 },
           shadowRadius: 0,
+          ...(Platform.OS === 'web' && {
+            maxWidth: 500,
+            width: '100%',
+            alignSelf: 'center',
+            left: 0,
+            right: 0,
+            marginHorizontal: 'auto',
+          }),
         },
         headerStyle: {
           backgroundColor: theme.background,
@@ -69,73 +124,45 @@ export default function TabLayout() {
         name="config"
         options={{
           title: 'Config',
-          tabBarIcon: ({ focused }) => (
-            <BlurView
-              intensity={60}
-              tint={isDark ? 'dark' : 'light'}
-              style={styles.blurContainer}
-            >
-              <View style={styles.iconContainer}>
-                <Ionicons 
-                  name="settings-outline" 
-                  size={40}
-                  color={focused ? theme.yellow : theme.text} 
-                />
-              </View>
-            </BlurView>
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="settings-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="index"
-        options={{
-          title: '',
-          tabBarIcon: () => (
-            <Animated.View 
-              style={[
-                styles.diceButton,
-                {
-                  transform: [{ rotate: shakeAnim.interpolate({
-                    inputRange: [-10, 10],
-                    outputRange: ['-10deg', '10deg']
-                  })}]
-                }
-              ]}
-            >
-              <Image 
-                source={require('@/assets/images/dice-static.png')}
-                style={styles.diceImage}
-                resizeMode="contain"
-              />
-            </Animated.View>
-          ),
-          tabBarButton: (props) => (
-            <Pressable
-              {...props}
-              onPress={handleDicePress}
-            />
-          ),
-        }}
+        options={
+          Platform.OS === 'web'
+            ? {
+                title: '',
+                tabBarButton: () => (
+                  <View style={styles.diceWrapperWeb}>
+                    <TouchableOpacity 
+                      onPress={handleDicePress}
+                      activeOpacity={0.7}
+                      style={styles.diceButtonWeb}
+                    >
+                      <DiceImage />
+                    </TouchableOpacity>
+                  </View>
+                ),
+              }
+            : {
+                title: '',
+                tabBarIcon: () => (
+                  <View style={styles.diceButtonMobile}>
+                    <DiceImage />
+                  </View>
+                ),
+                tabBarButton: (props) => (
+                  <Pressable {...props} onPress={handleDicePress} />
+                ),
+              }
+        }
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ focused }) => (
-            <BlurView
-              intensity={60}
-              tint={isDark ? 'dark' : 'light'}
-              style={styles.blurContainer}
-            >
-              <View style={styles.iconContainer}>
-                <Ionicons 
-                  name="time-outline" 
-                  size={40}
-                  color={focused ? theme.yellow : theme.text} 
-                />
-              </View>
-            </BlurView>
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="time-outline" focused={focused} />,
         }}
       />
     </Tabs>
@@ -157,7 +184,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  diceButton: {
+  webIconContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  diceWrapperWeb: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  diceButtonWeb: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  diceButtonMobile: {
     width: 80,
     height: 80,
     borderRadius: 30,

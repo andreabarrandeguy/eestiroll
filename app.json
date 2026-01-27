@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "randomize",
-    "slug": "randomize",
+    "name": "EestiRoll",
+    "slug": "eestiroll",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "randomize",
+    "scheme": "eestiroll",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,8 +22,9 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/dice-static.png"
     },
     "plugins": [
       "expo-router",
@@ -42,7 +43,8 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/eestiroll"
     },
     "extra": {
       "router": {},

@@ -1,12 +1,12 @@
+import { Icon } from '@/components/Icon';
 import { WordCard } from '@/components/WordCard';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
 import { useTranslations } from '@/hooks/useTranslations';
 import { categoryColorMap } from '@/utils/wordData';
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -44,83 +44,101 @@ export default function HomeScreen() {
     setCursorPosition(event.nativeEvent.selection.start);
   };
 
+  const content = (
+    <View style={styles.contentWrapper}>
+      <View style={styles.content}>
+        <Text style={[styles.title, { color: theme.text }]}>
+          EestiRoll
+        </Text>
+
+        {words.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyTextBold, { color: theme.text }]}>
+              {t('noCategoriesSelected')}
+            </Text>
+            <View style={styles.configHintContainer}>
+              <Text style={[styles.emptyText, { color: theme.text }]}>
+                {t('customizeCategories')} 
+              </Text>
+              <Icon name="settings-outline" size={16} color={theme.text} />
+            </View>
+          </View>
+        )}
+
+        {words.length > 0 && (
+          <>
+            <View style={styles.wordsContainer}>
+              {words.map((item, index) => (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.wordWrapper,
+                    { width: use3Columns ? '32%' : '48%' }
+                  ]}
+                >
+                  <WordCard 
+                    word={item.word} 
+                    category={item.category}
+                    color={categoryColorMap[item.category]}
+                    refreshKey={refreshKey}
+                    uppercaseCategory={true}
+                    compact={use3Columns}
+                    onDoubleTap={handleDoubleTap}
+                  />
+                </View>
+              ))}
+            </View>
+
+            <View style={[
+              styles.inputContainer, 
+              { 
+                backgroundColor: theme.inputBackground,
+                borderWidth: 1,
+                borderColor: theme.border
+              }
+            ]}>
+              <TextInput
+                style={[
+                  styles.input, 
+                  { color: theme.inputText },
+                  Platform.OS === 'web' && { outlineStyle: 'none', height: 30 } as any
+                ]}
+                placeholder={t('enterSentence')}
+                placeholderTextColor={theme.iconInactive}
+                value={sentence}
+                onChangeText={setSentence}
+                onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
+                maxLength={140}
+                multiline={Platform.OS !== 'web'}
+                numberOfLines={1}
+              />
+              {sentence.length > 0 && (
+                <TouchableOpacity 
+                  style={styles.sendButton} 
+                  onPress={handleSend}
+                >
+                  <Icon name="paper-plane" size={20} color={theme.inputText} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
+      </View>
+    </View>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        {content}
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.content}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            Randomize
-          </Text>
-
-          {words.length === 0 && (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyTextBold, { color: theme.text }]}>
-                {t('noCategoriesSelected')}
-              </Text>
-              <View style={styles.configHintContainer}>
-                <Text style={[styles.emptyText, { color: theme.text }]}>
-                  {t('customizeCategories')} 
-                </Text>
-                <Ionicons name="settings-outline" size={16} color={theme.text} style={{ opacity: 0.6 }} />
-              </View>
-            </View>
-          )}
-
-          {words.length > 0 && (
-            <>
-              <View style={styles.wordsContainer}>
-                {words.map((item, index) => (
-                  <View 
-                    key={index} 
-                    style={[
-                      styles.wordWrapper,
-                      { width: use3Columns ? '32%' : '48%' }
-                    ]}
-                  >
-                    <WordCard 
-                      word={item.word} 
-                      category={item.category}
-                      color={categoryColorMap[item.category]}
-                      refreshKey={refreshKey}
-                      uppercaseCategory={true}
-                      compact={use3Columns}
-                      onDoubleTap={handleDoubleTap}
-                    />
-                  </View>
-                ))}
-              </View>
-
-              <View style={[
-                styles.inputContainer, 
-                { 
-                  backgroundColor: theme.inputBackground,
-                  borderWidth: 1,
-                  borderColor: theme.border
-                }
-              ]}>
-                <TextInput
-                  style={[styles.input, { color: theme.inputText }]}
-                  placeholder={t('enterSentence')}
-                  placeholderTextColor={theme.iconInactive}
-                  value={sentence}
-                  onChangeText={setSentence}
-                  onSelectionChange={handleSelectionChange}
-                  maxLength={140}
-                  multiline
-                />
-                {sentence.length > 0 && (
-                  <TouchableOpacity 
-                    style={styles.sendButton} 
-                    onPress={handleSend}
-                  >
-                    <Ionicons name="paper-plane" size={20} color={theme.inputText} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          )}
-          
-        </View>
+        {content}
       </TouchableWithoutFeedback>
     </SafeAreaView>
   );
@@ -129,6 +147,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  contentWrapper: {
+    flex: 1,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
   content: {
     flex: 1,
@@ -182,10 +206,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     maxHeight: 120,
     paddingRight: 10,
-    marginBottom: 3,
   },
   sendButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 });

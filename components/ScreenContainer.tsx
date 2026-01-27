@@ -1,5 +1,5 @@
+import { Icon } from '@/components/Icon';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -30,7 +30,7 @@ export function ScreenContainer({
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <Ionicons name="arrow-back" size={24} color={theme.text} />
+              <Icon name="arrow-back" size={24} color={theme.text} />
             </TouchableOpacity>
           )}
           <Text style={[
@@ -54,17 +54,19 @@ export function ScreenContainer({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {scrollable ? (
-          <ScrollView 
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {content}
-          </ScrollView>
-        ) : (
-          content
-        )}
+        <View style={styles.contentWrapper}>
+          {scrollable ? (
+            <ScrollView 
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {content}
+            </ScrollView>
+          ) : (
+            content
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -76,6 +78,12 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
   scrollView: {
     flex: 1,

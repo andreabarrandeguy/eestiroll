@@ -1,9 +1,9 @@
+import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { useCategories } from '@/contexts/CategoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { categories, categoryColorMap } from '@/utils/wordData';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -54,7 +54,7 @@ export default function CategoriesScreen() {
                 { backgroundColor: theme.background, opacity: canDecrease ? 1 : 0.3 }
               ]}
             >
-              <Ionicons name="remove" size={24} color={theme.text} />
+              <Icon name="remove" size={24} color={theme.text} />
             </TouchableOpacity>
             
             <Text style={[styles.stepperValue, { color: theme.text }]}>
@@ -69,7 +69,7 @@ export default function CategoriesScreen() {
                 { backgroundColor: theme.background, opacity: canIncrease ? 1 : 0.3 }
               ]}
             >
-              <Ionicons name="add" size={24} color={theme.text} />
+              <Icon name="add" size={24} color={theme.text} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.hint, { color: theme.iconInactive }]}>
@@ -106,7 +106,7 @@ export default function CategoriesScreen() {
                       {t(category)}
                     </Text>
                   </View>
-                  <Ionicons 
+                  <Icon 
                     name={isExcluded ? "close-circle" : "checkmark-circle"} 
                     size={24} 
                     color={isExcluded ? "#E95A35" : theme.yellow} 

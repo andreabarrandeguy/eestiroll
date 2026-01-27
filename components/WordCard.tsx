@@ -16,17 +16,17 @@ interface WordCardProps {
   onLongPress?: () => void;
 }
 
-// Cache global de traducciones
+// Translations global cache
 let cachedTranslations: Record<string, any[]> = {};
 
-// Función para cargar traducciones desde la API
+// Function to load translations from API
 export async function loadTranslations() {
   try {
     const content = await fetchContent();
     cachedTranslations = content.data.words;
   } catch (error) {
     console.error('Error loading translations from API');
-    // Fallback a wordData.ts
+    // Fallback to wordData.ts
     const { allWords } = require('@/utils/wordData');
     cachedTranslations = allWords;
   }
@@ -38,6 +38,16 @@ export function getWordTranslation(word: string, category: string, language: str
   const wordObj = wordList.find((w: any) => w.word === word);
   if (!wordObj) return word;
   return wordObj.translations?.[language] || word;
+}
+
+// Helper to get all translations
+export function getAllWordTranslations(word: string, category: string): Record<string, string> {
+  const wordList = cachedTranslations[category] || [];
+  const wordObj = wordList.find((w: any) => w.word === word);
+  if (!wordObj || !wordObj.translations) {
+    return { en: word, es: word, ru: word };
+  }
+  return wordObj.translations;
 }
 
 export const WordCard = React.memo(({ 
@@ -86,6 +96,10 @@ export const WordCard = React.memo(({
     if (!wordObj) return word;
     
     return wordObj.translations?.[language] || word;
+  };
+
+  const getAllTranslations = () => {
+    return getAllWordTranslations(word, category);
   };
 
   const handlePress = () => {
@@ -174,6 +188,8 @@ export const WordCard = React.memo(({
         onClose={() => setModalVisible(false)}
         estonianWord={word}
         translation={getTranslation()}
+        allTranslations={getAllTranslations()}
+        currentLanguage={language}
         category={displayText}
         cardColor={color}
       />

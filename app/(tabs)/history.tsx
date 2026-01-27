@@ -1,4 +1,5 @@
-import { getWordTranslation } from '@/components/WordCard';
+import { Icon } from '@/components/Icon';
+import { getAllWordTranslations, getWordTranslation } from '@/components/WordCard';
 import { WordModal } from '@/components/WordModal';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -6,7 +7,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
-import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -38,14 +38,20 @@ export default function HistoryScreen() {
   };
 
   const handleDelete = (timestamp: number) => {
-    Alert.alert(
-      t('deleteEntry'),
-      t('deleteConfirmation'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { text: t('delete'), style: 'destructive', onPress: () => deleteEntry(timestamp) }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('deleteConfirmation'))) {
+        deleteEntry(timestamp);
+      }
+    } else {
+      Alert.alert(
+        t('deleteEntry'),
+        t('deleteConfirmation'),
+        [
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('delete'), style: 'destructive', onPress: () => deleteEntry(timestamp) }
+        ]
+      );
+    }
   };
 
   const handleEditNote = (timestamp: number, currentNote?: string) => {
@@ -83,22 +89,32 @@ export default function HistoryScreen() {
   };
 
   const handleDeleteSelected = () => {
-    Alert.alert(
-      t('deleteSelected'),
-      t('deleteSelectedConfirmation').replace('{count}', String(selectedEntries.length)),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { 
-          text: t('delete'), 
-          style: 'destructive', 
-          onPress: () => {
-            deleteMultiple(selectedEntries);
-            setSelectedEntries([]);
-            setSelectionMode(false);
+    const message = t('deleteSelectedConfirmation').replace('{count}', String(selectedEntries.length));
+    
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) {
+        deleteMultiple(selectedEntries);
+        setSelectedEntries([]);
+        setSelectionMode(false);
+      }
+    } else {
+      Alert.alert(
+        t('deleteSelected'),
+        message,
+        [
+          { text: t('cancel'), style: 'cancel' },
+          { 
+            text: t('delete'), 
+            style: 'destructive', 
+            onPress: () => {
+              deleteMultiple(selectedEntries);
+              setSelectedEntries([]);
+              setSelectionMode(false);
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const exitSelectionMode = () => {
@@ -108,178 +124,182 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Fixed Header */}
-      <View style={styles.fixedHeader}>
-        <Text style={[styles.title, { color: theme.text }]}>
-          {`${t('history')} (${history.length}/100)`}
-        </Text>
+      <View style={styles.contentWrapper}>
+        {/* Fixed Header */}
+        <View style={styles.fixedHeader}>
+          <Text style={[styles.title, { color: theme.text }]}>
+            {`${t('history')} (${history.length}/100)`}
+          </Text>
 
-        {history.length > 0 && (
-          <View style={styles.selectionBar}>
-            {selectionMode ? (
-              <>
-                <TouchableOpacity onPress={toggleSelectAll} style={styles.selectionButton}>
-                  <Ionicons 
-                    name={selectedEntries.length === history.length ? "checkbox" : "square-outline"} 
-                    size={20} 
-                    color={theme.text} 
-                  />
-                  <Text style={[styles.selectionButtonText, { color: theme.text }]}>
-                    {selectedEntries.length === history.length ? t('deselectAll') : t('selectAll')}
-                  </Text>
-                </TouchableOpacity>
-                <View style={styles.selectionActions}>
-                  {selectedEntries.length > 0 && (
-                    <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteButton}>
-                      <Ionicons name="trash" size={18} color="#E95A35" />
-                      <Text style={styles.deleteButtonText}>{t('delete')} ({selectedEntries.length})</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity onPress={exitSelectionMode} style={styles.cancelButton}>
-                    <Text style={[styles.cancelButtonText, { color: theme.iconInactive }]}>{t('cancel')}</Text>
+          {history.length > 0 && (
+            <View style={styles.selectionBar}>
+              {selectionMode ? (
+                <>
+                  <TouchableOpacity onPress={toggleSelectAll} style={styles.selectionButton}>
+                    <Icon 
+                      name={selectedEntries.length === history.length ? "checkbox" : "square-outline"} 
+                      size={20} 
+                      color={theme.text} 
+                    />
+                    <Text style={[styles.selectionButtonText, { color: theme.text }]}>
+                      {selectedEntries.length === history.length ? t('deselectAll') : t('selectAll')}
+                    </Text>
                   </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.selectionButton}>
-                <Ionicons name="checkmark-circle-outline" size={20} color={theme.iconInactive} />
-                <Text style={[styles.selectionButtonText, { color: theme.iconInactive }]}>{t('select')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </View>
-
-      {/* Scrollable Content */}
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {history.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.text }]}>
-              {t('noHistoryYet')}
-            </Text>
-          ) : (
-            history.map((entry) => (
-              <View 
-                key={entry.timestamp} 
-                style={[styles.entryContainer, { backgroundColor: theme.cardBackground }]}
-              >
-                {showCopied === entry.timestamp && (
-                  <View style={styles.copiedOverlay}>
-                    <Text style={styles.copiedText}>{t('copied')}</Text>
-                  </View>
-                )}
-
-                <View style={styles.entryHeader}>
-                  {selectionMode && (
-                    <TouchableOpacity 
-                      onPress={() => toggleSelectEntry(entry.timestamp)}
-                      style={styles.checkbox}
-                    >
-                      <Ionicons 
-                        name={selectedEntries.includes(entry.timestamp) ? "checkbox" : "square-outline"} 
-                        size={22} 
-                        color={selectedEntries.includes(entry.timestamp) ? theme.yellow : theme.iconInactive} 
-                      />
+                  <View style={styles.selectionActions}>
+                    {selectedEntries.length > 0 && (
+                      <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteButton}>
+                        <Icon name="trash" size={18} color="#E95A35" />
+                        <Text style={styles.deleteButtonText}>{t('delete')} ({selectedEntries.length})</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={exitSelectionMode} style={styles.cancelButton}>
+                      <Text style={[styles.cancelButtonText, { color: theme.iconInactive }]}>{t('cancel')}</Text>
                     </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.selectionButton}>
+                  <Icon name="checkmark-circle-outline" size={20} color={theme.iconInactive} />
+                  <Text style={[styles.selectionButtonText, { color: theme.iconInactive }]}>{t('select')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Scrollable Content */}
+        <KeyboardAvoidingView 
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {history.length === 0 ? (
+              <Text style={[styles.emptyText, { color: theme.text }]}>
+                {t('noHistoryYet')}
+              </Text>
+            ) : (
+              history.map((entry) => (
+                <View 
+                  key={entry.timestamp} 
+                  style={[styles.entryContainer, { backgroundColor: theme.cardBackground }]}
+                >
+                  {showCopied === entry.timestamp && (
+                    <View style={styles.copiedOverlay}>
+                      <Text style={styles.copiedText}>{t('copied')}</Text>
+                    </View>
                   )}
-                  <Text style={[
-                    styles.sentenceText,
-                    { 
-                      color: theme.text,
-                      fontStyle: entry.sentence ? 'normal' : 'italic', 
-                      opacity: entry.sentence ? 1 : 0.5,
-                      flex: 1
-                    }
-                  ]}>
-                    {entry.sentence || '(no sentence)'}
-                  </Text>
-                  
-                  {!selectionMode && (
-                    <View style={styles.actionButtons}>
-                      {entry.sentence && (
+
+                  <View style={styles.entryHeader}>
+                    {selectionMode && (
+                      <TouchableOpacity 
+                        onPress={() => toggleSelectEntry(entry.timestamp)}
+                        style={styles.checkbox}
+                      >
+                        <Icon 
+                          name={selectedEntries.includes(entry.timestamp) ? "checkbox" : "square-outline"} 
+                          size={22} 
+                          color={selectedEntries.includes(entry.timestamp) ? theme.yellow : theme.iconInactive} 
+                        />
+                      </TouchableOpacity>
+                    )}
+                    <Text style={[
+                      styles.sentenceText,
+                      { 
+                        color: theme.text,
+                        fontStyle: entry.sentence ? 'normal' : 'italic', 
+                        opacity: entry.sentence ? 1 : 0.5,
+                        flex: 1
+                      }
+                    ]}>
+                      {entry.sentence || '(no sentence)'}
+                    </Text>
+                    
+                    {!selectionMode && (
+                      <View style={styles.actionButtons}>
+                        {entry.sentence && (
+                          <TouchableOpacity 
+                            onPress={() => handleCopy(entry.sentence, entry.timestamp)}
+                            style={styles.actionButton}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          >
+                            <Icon name="copy-outline" size={18} color={theme.iconInactive} />
+                          </TouchableOpacity>
+                        )}
                         <TouchableOpacity 
-                          onPress={() => handleCopy(entry.sentence, entry.timestamp)}
+                          onPress={() => handleDelete(entry.timestamp)}
                           style={styles.actionButton}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                          <Ionicons name="copy-outline" size={18} color={theme.iconInactive} />
-                        </TouchableOpacity>
-                      )}
-                      <TouchableOpacity 
-                        onPress={() => handleDelete(entry.timestamp)}
-                        style={styles.actionButton}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Ionicons name="trash-outline" size={18} color={theme.iconInactive} />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.wordsGrid}>
-                  {entry.words.map((item, i) => (
-                    <Pressable 
-                      key={i} 
-                      onPress={() => handleWordPress(item)}
-                      style={[styles.wordChip, { backgroundColor: categoryColorMap[item.category] }]}
-                    >
-                      <Text style={styles.wordChipText}>{item.word}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View style={[styles.noteSection, { borderTopColor: theme.border }]}>
-                  {editingNoteTimestamp === entry.timestamp ? (
-                    <View style={styles.noteEditContainer}>
-                      <TextInput
-                        style={[styles.noteInput, { color: theme.text, borderColor: theme.border }]}
-                        placeholder={t('addNote')}
-                        placeholderTextColor={theme.iconInactive}
-                        value={noteText}
-                        onChangeText={setNoteText}
-                        multiline
-                        autoFocus
-                      />
-                      <View style={styles.noteEditActions}>
-                        <TouchableOpacity onPress={handleCancelEdit} style={styles.noteEditButton}>
-                          <Ionicons name="close" size={20} color={theme.iconInactive} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={handleSaveNote} style={styles.noteEditButton}>
-                          <Ionicons name="checkmark" size={20} color={theme.yellow} />
+                          <Icon name="trash-outline" size={18} color={theme.iconInactive} />
                         </TouchableOpacity>
                       </View>
-                    </View>
-                  ) : (
-                    <TouchableOpacity 
-                      onPress={() => handleEditNote(entry.timestamp, entry.note)}
-                      style={styles.noteDisplay}
-                    >
-                      {entry.note ? (
-                        <Text style={[styles.noteText, { color: theme.text }]}>
-                          <Text style={{ fontWeight: '600' }}>{t('note')}: </Text>
-                          {entry.note}
-                        </Text>
-                      ) : (
-                        <Text style={[styles.addNoteText, { color: theme.iconInactive }]}>
-                          <Ionicons name="add-circle-outline" size={14} color={theme.iconInactive} />
-                          {' '}{t('addNote')}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
+                    )}
+                  </View>
+
+                  <View style={styles.wordsGrid}>
+                    {entry.words.map((item, i) => (
+                      <Pressable 
+                        key={i} 
+                        onPress={() => handleWordPress(item)}
+                        style={[styles.wordChip, { backgroundColor: categoryColorMap[item.category] }]}
+                      >
+                        <Text style={styles.wordChipText}>{item.word}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  <View style={[styles.noteSection, { borderTopColor: theme.border }]}>
+                    {editingNoteTimestamp === entry.timestamp ? (
+                      <View style={styles.noteEditContainer}>
+                        <TextInput
+                          style={[styles.noteInput, { color: theme.text, borderColor: theme.border }]}
+                          placeholder={t('addNote')}
+                          placeholderTextColor={theme.iconInactive}
+                          value={noteText}
+                          onChangeText={setNoteText}
+                          multiline
+                          autoFocus
+                        />
+                        <View style={styles.noteEditActions}>
+                          <TouchableOpacity onPress={handleCancelEdit} style={styles.noteEditButton}>
+                            <Icon name="close" size={20} color={theme.iconInactive} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={handleSaveNote} style={styles.noteEditButton}>
+                            <Icon name="checkmark" size={20} color={theme.yellow} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <TouchableOpacity 
+                        onPress={() => handleEditNote(entry.timestamp, entry.note)}
+                        style={styles.noteDisplay}
+                      >
+                        {entry.note ? (
+                          <Text style={[styles.noteText, { color: theme.text }]}>
+                            <Text style={{ fontWeight: '600' }}>{t('note')}: </Text>
+                            {entry.note}
+                          </Text>
+                        ) : (
+                          <View style={styles.addNoteRow}>
+                            <Icon name="add-circle-outline" size={14} color={theme.iconInactive} />
+                            <Text style={[styles.addNoteText, { color: theme.iconInactive }]}>
+                              {' '}{t('addNote')}
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+              ))
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
 
       {selectedWord && (
         <WordModal
@@ -287,6 +307,8 @@ export default function HistoryScreen() {
           onClose={() => setModalVisible(false)}
           estonianWord={selectedWord.word}
           translation={getWordTranslation(selectedWord.word, selectedWord.category, language)}
+          allTranslations={getAllWordTranslations(selectedWord.word, selectedWord.category)}
+          currentLanguage={language}
           category={t(selectedWord.category as any).toUpperCase()}
           cardColor={categoryColorMap[selectedWord.category]}
         />
@@ -298,6 +320,12 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
   fixedHeader: {
     paddingHorizontal: 20,
@@ -416,6 +444,10 @@ const styles = StyleSheet.create({
   noteText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  addNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   addNoteText: {
     fontSize: 14,

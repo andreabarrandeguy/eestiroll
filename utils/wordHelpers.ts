@@ -7,7 +7,9 @@ let isLoaded = false;
 export async function loadWordsFromAPI() {
     try {
         const content = await fetchContent();
+        console.log('CONTENT FROM API:', JSON.stringify(content, null, 2));
         cachedWords = content?.data?.words ?? fallbackWords;
+        console.log('CACHED WORDS:', Object.keys(cachedWords));
         isLoaded = true;
     } catch (error) {
         console.error('Error loading words from API, using fallback:', error);

@@ -33,12 +33,19 @@ export function useRandomWords() {
     const { addEntry } = useHistory();
 
     const generateNewWords = () => {
+        console.log('=== generateNewWords ===');
+        console.log('availableCategories:', availableCategories);
+        console.log('categoryCount:', categoryCount);
+
         // Select random categories from available ones
         const shuffledCategories = shuffleArray(availableCategories);
         const selectedCategories = shuffledCategories.slice(0, categoryCount);
+        console.log('selectedCategories:', selectedCategories);
 
         // Generate new words avoiding recently used ones
         const newWords = getRandomWords(selectedCategories, recentWords.current);
+        console.log('newWords:', newWords);
+
         setWords(newWords);
         setRefreshKey(prev => prev + 1);
 
@@ -61,6 +68,7 @@ export function useRandomWords() {
 
     // Trigger generation when random button is pressed
     useEffect(() => {
+        console.log('useEffect triggered:', { randomTrigger, categoryCount, availableCategories });
         if (randomTrigger > 0) {
             generateNewWords();
         }

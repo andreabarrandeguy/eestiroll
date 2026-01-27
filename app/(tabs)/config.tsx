@@ -1,3 +1,4 @@
+import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -28,7 +29,9 @@ function SettingRow({
       activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.settingLeft}>
-        <Ionicons name={icon} size={22} color={theme.text} style={styles.settingIcon} />
+        <View style={styles.settingIcon}>
+          <Icon name={icon} size={22} color={theme.text} />
+        </View>
         <Text style={[styles.settingLabel, { color: theme.text }]}>{label}</Text>
       </View>
       {rightComponent}
@@ -59,7 +62,7 @@ export default function ConfigScreen() {
           onPress={handleCategoriesPress}
           theme={theme}
           rightComponent={
-            <Ionicons name="chevron-forward" size={20} color={theme.iconInactive} />
+            <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
           }
         />
         
@@ -91,7 +94,7 @@ export default function ConfigScreen() {
               <Text style={[styles.settingValue, { color: theme.iconInactive }]}>
                 {currentLanguageOption.nativeName}
               </Text>
-              <Ionicons name="chevron-forward" size={20} color={theme.iconInactive} />
+              <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
             </View>
           }
         />
