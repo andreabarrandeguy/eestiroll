@@ -1,6 +1,6 @@
 import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
-import { CategoryContextType } from '@/types';
+import { CategoryContextType, VocabLevel } from '@/types';
 import { categories as fallbackCategories } from '@/utils/wordData';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -10,6 +10,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [categoryCount, setCategoryCountState] = useState(3);
   const [excludedCategories, setExcludedCategories] = useState<string[]>([]);
+  const [vocabLevel, setVocabLevelState] = useState<VocabLevel>('A1');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,15 +22,17 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
       const content = await fetchContent();
       const categoryList = content?.data?.categories?.map((c: any) => c.code) ?? fallbackCategories;
       setAllCategories(categoryList);
-      
-      // Load saved settings
-      const savedCount = await StorageService.loadCategoryCount();
-      const savedExcluded = await StorageService.loadExcludedCategories();
-      
-      // Validate saved count doesn't exceed available categories
+
+      const [savedCount, savedExcluded, savedLevel] = await Promise.all([
+        StorageService.loadCategoryCount(),
+        StorageService.loadExcludedCategories(),
+        StorageService.loadVocabLevel(),
+      ]);
+
       const maxCount = categoryList.length - savedExcluded.length;
       setCategoryCountState(Math.min(savedCount, maxCount));
       setExcludedCategories(savedExcluded.filter((cat: string) => categoryList.includes(cat)));
+      setVocabLevelState(savedLevel);
     } catch (error) {
       console.error('Error loading content, using fallback:', error);
       setAllCategories([...fallbackCategories]);
@@ -49,37 +52,39 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
   const toggleExcluded = async (category: string) => {
     let newExcluded: string[];
-    
+
     if (excludedCategories.includes(category)) {
-      // Remove from excluded
       newExcluded = excludedCategories.filter(c => c !== category);
     } else {
-      // Add to excluded (if allowed)
-      if (excludedCategories.length >= maxExclusions) {
-        return; // Can't exclude more
-      }
+      if (excludedCategories.length >= maxExclusions) return;
       newExcluded = [...excludedCategories, category];
     }
-    
+
     setExcludedCategories(newExcluded);
     await StorageService.saveExcludedCategories(newExcluded);
-    
-    // Adjust count if necessary
+
     const newAvailable = allCategories.length - newExcluded.length;
     if (categoryCount > newAvailable) {
       setCategoryCount(newAvailable);
     }
   };
 
+  const setVocabLevel = async (level: VocabLevel) => {
+    setVocabLevelState(level);
+    await StorageService.saveVocabLevel(level);
+  };
+
   return (
-    <CategoryContext.Provider value={{ 
-      categoryCount, 
-      excludedCategories, 
-      setCategoryCount, 
+    <CategoryContext.Provider value={{
+      categoryCount,
+      excludedCategories,
+      setCategoryCount,
       toggleExcluded,
       availableCategories,
       maxExclusions,
-      isLoading 
+      isLoading,
+      vocabLevel,
+      setVocabLevel,
     }}>
       {children}
     </CategoryContext.Provider>

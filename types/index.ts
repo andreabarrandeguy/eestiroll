@@ -8,6 +8,8 @@ export interface WordTranslations {
 
 export type Language = 'en' | 'es' | 'ru';
 
+export type VocabLevel = 'A1' | 'A2';
+
 export interface LanguageOption {
     code: Language;
     name: string;
@@ -43,6 +45,8 @@ export interface CategoryContextType {
     availableCategories: string[];
     maxExclusions: number;
     isLoading: boolean;
+    vocabLevel: VocabLevel;
+    setVocabLevel: (level: VocabLevel) => void;
 }
 
 export interface HistoryEntry {
@@ -50,14 +54,21 @@ export interface HistoryEntry {
     sentence: string;
     timestamp: number;
     note?: string;
+    aiScore?: number;
+    aiValidation?: string;
+    aiCoreIssue?: string;
+    aiRule?: string;
+    aiCorrectedSentence?: string;
+    aiNotes?: string;
 }
 
 export interface HistoryContextType {
     history: HistoryEntry[];
-    addEntry: (words: Word[], sentence: string) => void;
+    addEntry: (words: Word[], sentence: string, aiResult?: any) => void;
     deleteEntry: (timestamp: number) => void;
     deleteMultiple: (timestamps: number[]) => void;
     updateNote: (timestamp: number, note: string) => void;
+    updateEntryAI: (timestamp: number, aiResult: any) => void;
     getUsedWords: () => string[];
 }
 

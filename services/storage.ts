@@ -1,5 +1,5 @@
 import { ThemeMode } from '@/constants/Colors';
-import { HistoryEntry, Language } from '@/types';
+import { HistoryEntry, Language, VocabLevel } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
@@ -8,18 +8,18 @@ const KEYS = {
     HISTORY: '@history_v1',
     THEME: '@theme_mode',
     LANGUAGE: '@language',
+    VOCAB_LEVEL: '@vocab_level',
 } as const;
 
-// Default values for fallback
 const DEFAULTS = {
     categoryCount: 3,
     excludedCategories: [] as string[],
     history: [] as HistoryEntry[],
     theme: 'dark' as ThemeMode,
     language: 'en' as Language,
+    vocabLevel: 'A1' as VocabLevel,
 };
 
-// Retry helper
 async function withRetry<T>(
     operation: () => Promise<T>,
     retries = 2,
@@ -145,6 +145,27 @@ export const StorageService = {
         } catch (error) {
             console.error('Error loading language:', error);
             return DEFAULTS.language;
+        }
+    },
+
+    // Vocab Level
+    async saveVocabLevel(level: VocabLevel): Promise<boolean> {
+        try {
+            await withRetry(() => AsyncStorage.setItem(KEYS.VOCAB_LEVEL, level));
+            return true;
+        } catch (error) {
+            console.error('Error saving vocab level:', error);
+            return false;
+        }
+    },
+
+    async loadVocabLevel(): Promise<VocabLevel> {
+        try {
+            const saved = await withRetry(() => AsyncStorage.getItem(KEYS.VOCAB_LEVEL));
+            return (saved as VocabLevel) || DEFAULTS.vocabLevel;
+        } catch (error) {
+            console.error('Error loading vocab level:', error);
+            return DEFAULTS.vocabLevel;
         }
     },
 

@@ -178,6 +178,27 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
       <Path d="M8 12l3 3 5-6" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
     </Svg>
   ),
+
+  // Chevron down
+  'chevron-down': ({ size, color, strokeWidth = 2 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 9l6 6 6-6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
+  // Chevron up
+  'chevron-up': ({ size, color, strokeWidth = 2 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M18 15l-6-6-6 6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
+  // Sparkles outline
+  'sparkles-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
 };
 
 export function Icon({ name, size, color, style }: IconProps) {

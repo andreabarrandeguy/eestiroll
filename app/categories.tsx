@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { categories, categoryColorMap } from '@/utils/wordData';
 import { Stack } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CategoriesScreen() {
   const { 
@@ -15,10 +15,14 @@ export default function CategoriesScreen() {
     toggleExcluded,
     availableCategories,
     maxExclusions,
-    isLoading 
+    isLoading,
+    vocabLevel,
+    setVocabLevel,
   } = useCategories();
   const { theme } = useTheme();
   const { t } = useTranslations();
+
+  const isA2 = vocabLevel === 'A2';
 
   if (isLoading) {
     return (
@@ -40,8 +44,33 @@ export default function CategoriesScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenContainer title={t('categories')} showBackButton>
-        {/* Category Count Stepper */}
+
+        {/* Vocab Level Switch */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            {t('vocabularyLevel')}
+          </Text>
+          <View style={styles.levelRow}>
+            <Text style={[styles.levelLabel, { color: isA2 ? theme.iconInactive : theme.text }]}>
+              A1
+            </Text>
+            <Switch
+              value={isA2}
+              onValueChange={val => setVocabLevel(val ? 'A2' : 'A1')}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor='#f4f3f4'
+            />
+            <Text style={[styles.levelLabel, { color: isA2 ? theme.text : theme.iconInactive }]}>
+              A1 + A2
+            </Text>
+          </View>
+          <Text style={[styles.hint, { color: theme.iconInactive }]}>
+            {isA2 ? t('levelHintA2') : t('levelHintA1')}
+          </Text>
+        </View>
+
+        {/* Category Count Stepper */}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, marginTop: 20 }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             {t('categoriesPerRound')}
           </Text>
@@ -142,6 +171,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
+  },
+  levelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  levelLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    minWidth: 50,
+    textAlign: 'center',
   },
   stepperContainer: {
     flexDirection: 'row',
