@@ -1,7 +1,6 @@
 import { Icon } from '@/components/Icon';
 import { getWordTranslation, WordCard } from '@/components/WordCard';
 import { useHistory } from '@/contexts/HistoryContext';
-import { useRandom } from '@/contexts/RandomContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
 import { useTranslations } from '@/hooks/useTranslations';
@@ -9,7 +8,7 @@ import { AICheckResponse, checkSentenceWithAI } from '@/services/aiService';
 import { categoryColorMap } from '@/utils/wordData';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const languageMap: Record<string, string> = {
@@ -79,8 +78,6 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const { t, language } = useTranslations();
   const { addEntry } = useHistory();
-  const { triggerRandom } = useRandom();
-  const { height: windowHeight } = useWindowDimensions();
   const { 
     words, 
     refreshKey, 
@@ -91,11 +88,18 @@ export default function HomeScreen() {
   const [cursorPosition, setCursorPosition] = useState(0);
   const [aiResult, setAiResult] = useState<AICheckResponse | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
 
   const use3Columns = words.length >= 9;
+
+  // When new words appear (new roll), go back to input mode
+  useEffect(() => {
+    setShowingFeedback(false);
+    setAiResult(null);
+    setAiLoading(false);
+  }, [refreshKey]);
 
   useFocusEffect(
     useCallback(() => {
@@ -125,7 +129,7 @@ export default function HomeScreen() {
 
     setLastSentence(sentence.trim());
     setAiResult(null);
-    setAiModalVisible(true);
+    setShowingFeedback(true);
     setAiLoading(true);
     Keyboard.dismiss();
 
@@ -146,7 +150,7 @@ export default function HomeScreen() {
         setAiRemaining(0);
       } else {
         console.error("AI check failed:", e);
-        setAiModalVisible(false);
+        setShowingFeedback(false);
       }
     } finally {
       setAiLoading(false);
@@ -176,7 +180,7 @@ export default function HomeScreen() {
           EestiRoll
         </Text>
 
-        {words.length === 0 && (
+        {words.length === 0 && !showingFeedback && (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyTextBold, { color: theme.text }]}>
               {t('noCategoriesSelected')}
@@ -190,7 +194,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {words.length > 0 && (
+        {!showingFeedback && words.length > 0 && (
           <>
             <View style={styles.wordsContainer}>
               {words.map((item, index) => (
@@ -257,136 +261,101 @@ export default function HomeScreen() {
           </>
         )}
 
-        <Modal
-          visible={aiModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setAiModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <Pressable 
-              style={StyleSheet.absoluteFill} 
-              onPress={() => !aiLoading && setAiModalVisible(false)} 
-            />
-
-            <View style={[styles.modalContent, { backgroundColor: theme.background, maxHeight: windowHeight * 0.75 }]}>
-              {/* Score card */}
-              {aiResult ? (
-                <View style={[styles.scoreCard, { backgroundColor: getScoreColor(aiResult.score) + '20', borderColor: getScoreColor(aiResult.score) }]}>
-                  <View style={styles.scoreTopRow}>
-                    <Text style={[styles.scoreText, { color: getScoreColor(aiResult.score) }]}>
-                      {aiResult.score}<Text style={styles.scoreMax}>/5</Text>
-                    </Text>
-                    <Text style={[styles.scoreLabel, { color: theme.text }]}>
-                      {getScoreLabel(aiResult.score)}
-                    </Text>
-                  </View>
-                  <View style={styles.scorePills}>
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <View
-                        key={i}
-                        style={[
-                          styles.scorePill,
-                          { backgroundColor: i <= aiResult.score ? getScoreColor(aiResult.score) : getScoreColor(aiResult.score) + '30' }
-                        ]}
-                      />
-                    ))}
-                  </View>
+        {showingFeedback && (
+          <View style={styles.feedbackContainer}>
+            {/* Fixed: Score card */}
+            {aiResult ? (
+              <View style={[styles.scoreCard, { backgroundColor: getScoreColor(aiResult.score) + '20', borderColor: getScoreColor(aiResult.score) }]}>
+                <View style={styles.scoreTopRow}>
+                  <Text style={[styles.scoreText, { color: getScoreColor(aiResult.score) }]}>
+                    {aiResult.score}<Text style={styles.scoreMax}>/5</Text>
+                  </Text>
+                  <Text style={[styles.scoreLabel, { color: theme.text }]}>
+                    {getScoreLabel(aiResult.score)}
+                  </Text>
                 </View>
-              ) : aiRemaining === 0 ? (
-                <Text style={{ color: '#E95A35', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
-                  {t('dailyLimitReached')}
-                </Text>
-              ) : (
-                <View style={{ alignItems: 'center', marginVertical: 8 }}>
-                  <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
+                <View style={styles.scorePills}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.scorePill,
+                        { backgroundColor: i <= aiResult.score ? getScoreColor(aiResult.score) : getScoreColor(aiResult.score) + '30' }
+                      ]}
+                    />
+                  ))}
                 </View>
-              )}
-
-              {/* Oración del usuario */}
-              <View style={[styles.userSentenceContainer, { borderColor: theme.border }]}>
-                <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
-                <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
               </View>
+            ) : aiRemaining === 0 ? (
+              <Text style={{ color: '#E95A35', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
+                {t('dailyLimitReached')}
+              </Text>
+            ) : (
+              <View style={{ alignItems: 'center', marginVertical: 8 }}>
+                <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
+              </View>
+            )}
 
-              {/* Campos de respuesta, límite, o skeletons */}
-              <ScrollView 
-                style={{ flexShrink: 1, marginTop: 4 }}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled={true}
-                keyboardShouldPersistTaps="handled"
-                bounces={true}
-              >
-                {aiResult ? (
-                  <>
-                    <View style={styles.fieldContainer}>
-                      <Text style={[styles.fieldValue, { color: theme.text }]}>{aiResult.validation}</Text>
-                    </View>
-                    {aiResult.score < 5 && (
-                      <>
-                        {aiResult.core_issue ? (
-                          <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600' }]}>{aiResult.core_issue}</Text>
-                          </View>
-                        ) : null}
-                        {aiResult.rule ? (
-                          <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600', fontSize: 18 }]}>{aiResult.rule}</Text>
-                          </View>
-                        ) : null}
-                        {aiResult.corrected_sentence ? (
-                          <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldValue, { color: theme.text, fontStyle: 'italic' }]}>{t('correction')}: {aiResult.corrected_sentence}</Text>
-                          </View>
-                        ) : null}
-
-                        {aiResult.notes ? (
-                          <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldValue, { color: theme.text }]}>{aiResult.notes}</Text>
-                          </View>
-                        ) : null}
-                      </>
-                    )}
-                  </>
-                ) : aiRemaining === 0 ? (
-                  <View style={{ alignItems: 'center', marginTop: 20 }}>
-                    <Text style={{ color: theme.text, fontSize: 14, textAlign: 'center', marginTop: 10, opacity: 0.7 }}>
-                      {t('savedToHistory')}
-                    </Text>
-                  </View>
-                ) : (
-                  <>
-                    <SkeletonLine width="90%" />
-                    <SkeletonLine width="75%" />
-                    <SkeletonLine width="60%" style={{ marginTop: 12 }} />
-                    <SkeletonLine width="95%" style={{ marginTop: 12 }} />
-                    <SkeletonLine width="80%" />
-                  </>
-                )}
-              </ScrollView>
-
-              {/* Continue button */}
-              {(aiResult || aiRemaining === 0) && (
-                <View style={styles.modalFooter}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setAiModalVisible(false);
-                      triggerRandom();
-                    }}
-                    style={styles.modalButton}
-                  >
-                    <Text style={styles.modalButtonText}>{t('continueLearning')}</Text>
-                  </TouchableOpacity>
-                  {aiRemaining !== null && aiRemaining !== undefined && aiResult && (
-                    <Text style={[styles.remainingText, { color: theme.text }]}>
-                      {aiRemaining} {aiRemaining === 1 ? t('checkLeft') : t('checksLeft')}
-                    </Text>
-                  )}
-                </View>
-              )}
+            {/* Fixed: User sentence */}
+            <View style={[styles.userSentenceContainer, { borderColor: theme.border }]}>
+              <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
+              <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
             </View>
+
+            {/* Scrollable: AI feedback fields */}
+            <ScrollView 
+              style={styles.feedbackScroll}
+              contentContainerStyle={styles.feedbackScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {aiResult ? (
+                <>
+                  <View style={styles.fieldContainer}>
+                    <Text style={[styles.fieldValue, { color: theme.text }]}>{aiResult.validation}</Text>
+                  </View>
+                  {aiResult.score < 5 && (
+                    <>
+                      {aiResult.core_issue ? (
+                        <View style={styles.fieldContainer}>
+                          <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600' }]}>{aiResult.core_issue}</Text>
+                        </View>
+                      ) : null}
+                      {aiResult.rule ? (
+                        <View style={styles.fieldContainer}>
+                          <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600', fontSize: 18 }]}>{aiResult.rule}</Text>
+                        </View>
+                      ) : null}
+                      {aiResult.corrected_sentence ? (
+                        <View style={styles.fieldContainer}>
+                          <Text style={[styles.fieldValue, { color: theme.text, fontStyle: 'italic' }]}>{t('correction')}: {aiResult.corrected_sentence}</Text>
+                        </View>
+                      ) : null}
+                      {aiResult.notes ? (
+                        <View style={styles.fieldContainer}>
+                          <Text style={[styles.fieldValue, { color: theme.text }]}>{aiResult.notes}</Text>
+                        </View>
+                      ) : null}
+                    </>
+                  )}
+                </>
+              ) : aiRemaining === 0 ? (
+                <View style={{ alignItems: 'center', marginTop: 20 }}>
+                  <Text style={{ color: theme.text, fontSize: 14, textAlign: 'center', marginTop: 10, opacity: 0.7 }}>
+                    {t('savedToHistory')}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <SkeletonLine width="90%" />
+                  <SkeletonLine width="75%" />
+                  <SkeletonLine width="60%" style={{ marginTop: 12 }} />
+                  <SkeletonLine width="95%" style={{ marginTop: 12 }} />
+                  <SkeletonLine width="80%" />
+                </>
+              )}
+            </ScrollView>
           </View>
-        </Modal>
+        )}
       </View>
     </View>
   );
@@ -475,18 +444,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalOverlay: {
+  feedbackContainer: {
+    marginTop: 20,
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  modalContent: {
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
+  feedbackScroll: {
+    flex: 1,
+    marginTop: 4,
+  },
+  feedbackScrollContent: {
+    paddingBottom: 140,
   },
   scoreCard: {
     borderWidth: 2,
@@ -543,36 +510,8 @@ const styles = StyleSheet.create({
   fieldContainer: {
     marginTop: 14,
   },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
   fieldValue: {
     fontSize: 15,
     lineHeight: 22,
-  },
-  modalFooter: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  modalButton: {
-    padding: 12,
-    backgroundColor: '#3B82F6',
-    borderRadius: 10,
-    alignItems: 'center',
-    width: '100%',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  remainingText: {
-    marginTop: 8,
-    fontSize: 12,
-    opacity: 0.5,
   },
 });
