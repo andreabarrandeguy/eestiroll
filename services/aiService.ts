@@ -1,3 +1,5 @@
+import { EVENTS, track } from './analytics';
+
 const AI_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/check/";
 
 interface AICheckRequest {
@@ -26,6 +28,7 @@ export class DailyLimitError extends Error {
 export async function checkSentenceWithAI(
     request: AICheckRequest
 ): Promise<AICheckResponse> {
+    track(EVENTS.AI_CHECK, { language: request.language, word_count: request.words.length });
     const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

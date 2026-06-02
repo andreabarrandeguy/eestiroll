@@ -1,3 +1,4 @@
+import { EVENTS, track } from '@/services/analytics';
 import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Language, LanguageOption } from '@/types';
@@ -56,6 +57,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = async (newLanguage: Language) => {
     setLanguageState(newLanguage);
+    track(EVENTS.LANGUAGE_CHANGED, { language: newLanguage });
     
     try {
       await StorageService.saveLanguage(newLanguage);

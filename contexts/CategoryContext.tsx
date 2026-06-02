@@ -1,3 +1,4 @@
+import { EVENTS, track } from '@/services/analytics';
 import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { CategoryContextType, VocabLevel } from '@/types';
@@ -61,6 +62,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     }
 
     setExcludedCategories(newExcluded);
+    track(EVENTS.CATEGORY_TOGGLED, { category, excluded: !excludedCategories.includes(category) });
     await StorageService.saveExcludedCategories(newExcluded);
 
     const newAvailable = allCategories.length - newExcluded.length;
@@ -71,6 +73,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
   const setVocabLevel = async (level: VocabLevel) => {
     setVocabLevelState(level);
+    track(EVENTS.LEVEL_CHANGED, { level });
     await StorageService.saveVocabLevel(level);
   };
 

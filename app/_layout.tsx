@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import 'react-native-reanimated';
 
 import { loadTranslations } from '@/components/WordCard';
@@ -12,6 +13,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { RandomProvider } from '@/contexts/RandomContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { setPostHogInstance } from '@/services/analytics';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -19,6 +21,19 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
+
+function AnalyticsInitializer() {
+  const posthog = usePostHog();
+  useEffect(() => {
+    if (posthog) {
+      setPostHogInstance(posthog);
+    }
+  }, [posthog]);
+  return null;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -67,7 +82,7 @@ export default function RootLayout() {
     );
   }
 
-  return (
+  const appContent = (
     <ThemeProvider>
       <LanguageProvider>
         <RandomProvider>
@@ -84,6 +99,25 @@ export default function RootLayout() {
         </RandomProvider>
       </LanguageProvider>
     </ThemeProvider>
+  );
+
+  if (!POSTHOG_API_KEY) {
+    console.warn('PostHog API key not set. Analytics disabled.');
+    return appContent;
+  }
+
+  return (
+    <PostHogProvider
+      apiKey={POSTHOG_API_KEY}
+      options={{
+        host: POSTHOG_HOST,
+        captureAppLifecycleEvents: true,
+        captureTouches: false,
+      }}
+    >
+      <AnalyticsInitializer />
+      {appContent}
+    </PostHogProvider>
   );
 }
 
