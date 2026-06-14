@@ -1,8 +1,10 @@
 import { Icon } from '@/components/Icon';
+import { SubscribeModal } from '@/components/SubscribeModal';
 import { getWordTranslation, WordCard } from '@/components/WordCard';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
+import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
 import { AICheckResponse, checkSentenceWithAI } from '@/services/aiService';
 import { categoryColorMap } from '@/utils/wordData';
@@ -91,7 +93,8 @@ export default function HomeScreen() {
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
-
+  const subscribeModal = useSubscribeModal();
+  
   const use3Columns = words.length >= 9;
 
   // When new words appear (new roll), go back to input mode
@@ -142,6 +145,7 @@ export default function HomeScreen() {
       setAiResult(result);
       setAiRemaining(result.remaining);
       addEntry(words, sentence.trim(), result);
+      subscribeModal.onAICheckSuccess();
       setSentence('');
     } catch (e) {
       if (e instanceof Error && e.message === "daily_limit") {
@@ -364,6 +368,11 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         {content}
+          <SubscribeModal
+            visible={subscribeModal.visible}
+            onDismiss={subscribeModal.onDismiss}
+            onSubscribed={subscribeModal.onSubscribed}
+          />
       </SafeAreaView>
     );
   }
@@ -373,6 +382,11 @@ export default function HomeScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         {content}
       </TouchableWithoutFeedback>
+        <SubscribeModal
+          visible={subscribeModal.visible}
+          onDismiss={subscribeModal.onDismiss}
+          onSubscribed={subscribeModal.onSubscribed}
+        />
     </SafeAreaView>
   );
 }

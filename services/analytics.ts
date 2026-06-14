@@ -18,4 +18,6 @@ export const EVENTS = {
     LANGUAGE_CHANGED: 'language_changed',
     AI_SUGGESTION: 'ai_suggestion_requested',
     AI_CHECK: 'ai_check_requested',
+    SUBSCRIBED: 'subscribed',
+    SUBSCRIBE_DISMISSED: 'subscribe_dismissed',
 } as const;

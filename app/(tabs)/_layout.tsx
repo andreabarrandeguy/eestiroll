@@ -1,7 +1,7 @@
 import { Icon } from '@/components/Icon';
 import { useRandom } from '@/contexts/RandomContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { track } from '@/services/analytics';
+import { EVENTS, track } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useRef } from 'react';
@@ -14,7 +14,7 @@ export default function TabLayout() {
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   const handleDicePress = () => {
-    track('roll_performed', { source: 'tab_button' });
+    track(EVENTS.ROLL, { source: 'tab_button' });
     Animated.sequence([
       Animated.timing(shakeAnim, {
         toValue: 10,

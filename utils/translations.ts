@@ -61,6 +61,14 @@ export const translations = {
         getFeedback: 'Get feedback',
         continueLearning: 'Continue learning',
         correction: 'Corrected sentence',
+
+        // Subscriber modal
+        suscribeToList: 'Suscribe to get updated when Eesti Roll app launches',
+        suscribeInfo: 'On the App Store and Google Play soon. Drop your email and we will let you know.',
+        notifyMe: 'Notify me',
+        thanks: 'Thanks',
+        weWillEmailYou: 'We will email you when EestiRoll is on the App Store and Google Play.',
+        close: 'Close',
     },
     es: {
         // Categories
@@ -122,6 +130,14 @@ export const translations = {
         getFeedback: 'Corregir',
         continueLearning: 'Continuar aprendiendo',
         correction: 'Corrección',
+
+        // Subscriber modal
+        suscribeToList: 'Suscribite para enterarte cuando la app de EestiRoll este lista',
+        suscribeInfo: 'Pronto en App Store y Google Play. Dejá tu email y te avisamos.',
+        notifyMe: 'Notificarme',
+        thanks: 'Gracias',
+        weWillEmailYou: 'Te avisaremos cuando la app de EestiRoll este en App Store y Google Play.',
+        close: 'Cerrar',
     },
     ru: {
         // Categories
@@ -183,6 +199,14 @@ export const translations = {
         getFeedback: 'Коррексьон',
         continueLearning: 'Продолжайте обучение',
         correction: 'Исправленное предложение',
+
+        // Subscriber modal
+        suscribeToList: 'Подпишитесь, чтобы получать новости о запуске приложения Eesti Roll',
+        suscribeInfo: 'Скоро в App Store и Google Play. Оставьте свой email, и мы сообщим вам.',
+        notifyMe: 'Уведомить меня',
+        thanks: 'Спасибо',
+        weWillEmailYou: 'Мы отправим вам письмо, когда EestiRoll появится в App Store и Google Play.',
+        close: 'Закрыть',
     },
 } as const;
 
