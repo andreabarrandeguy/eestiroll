@@ -11,6 +11,17 @@ interface AICheckRequest {
 export interface AICheckResponse {
     score: number;
     validation: string;
+    coreIssue: string;
+    rule: string;
+    correctedSentence: string;
+    notes: string;
+    remaining: number;
+}
+
+// Raw shape returned by the Python backend (snake_case)
+interface AICheckResponseRaw {
+    score: number;
+    validation: string;
     core_issue: string;
     rule: string;
     corrected_sentence: string;
@@ -28,7 +39,7 @@ export class DailyLimitError extends Error {
 export async function checkSentenceWithAI(
     request: AICheckRequest
 ): Promise<AICheckResponse> {
-    track(EVENTS.AI_CHECK, { language: request.language, word_count: request.words.length });
+    track(EVENTS.AI_CHECK, { language: request.language, wordCount: request.words.length });
     const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,5 +54,14 @@ export async function checkSentenceWithAI(
         throw new Error(`AI service error: ${response.status}`);
     }
 
-    return response.json();
+    const raw: AICheckResponseRaw = await response.json();
+    return {
+        score: raw.score,
+        validation: raw.validation,
+        coreIssue: raw.core_issue,
+        rule: raw.rule,
+        correctedSentence: raw.corrected_sentence,
+        notes: raw.notes,
+        remaining: raw.remaining,
+    };
 }

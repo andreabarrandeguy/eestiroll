@@ -1,20 +1,26 @@
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
+import { EVENTS, track } from '@/services/analytics';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-function SettingRow({ 
-  icon, 
-  label, 
-  onPress, 
+const APP_SHARE_URL = 'https://andreabarrandeguy.github.io/eestiroll/';
+
+function SettingRow({
+  icon,
+  label,
+  onPress,
   rightComponent,
   theme
-}: { 
+}: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
@@ -22,8 +28,8 @@ function SettingRow({
   theme: Theme;
 }) {
   return (
-    <TouchableOpacity 
-      style={styles.settingRow} 
+    <TouchableOpacity
+      style={styles.settingRow}
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.7 : 1}
@@ -39,11 +45,18 @@ function SettingRow({
   );
 }
 
+function SectionLabel({ label, theme, first }: { label: string; theme: Theme; first?: boolean }) {
+  return (
+    <Text style={[styles.sectionLabel, { color: theme.iconInactive, marginTop: first ? 0 : 20 }]}>{label}</Text>
+  );
+}
+
 export default function ConfigScreen() {
   const router = useRouter();
   const { theme, isDark, toggleTheme } = useTheme();
   const { currentLanguageOption } = useLanguage();
   const { t } = useTranslations();
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
 
   const handleCategoriesPress = () => {
     router.push('/categories');
@@ -53,8 +66,36 @@ export default function ConfigScreen() {
     router.push('/language');
   };
 
+  const handleAboutPress = () => {
+    router.push('/about');
+  };
+
+  const handleShare = async () => {
+    track(EVENTS.SHARE, { source: 'config' });
+    const shareText = `${t('shareMessage')} ${APP_SHARE_URL}`;
+
+    if (Platform.OS === 'web') {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          await navigator.share({ title: 'EestiRoll', text: shareText });
+        } catch {
+          // User dismissed the share sheet — nothing to do
+        }
+      } else {
+        await Clipboard.setStringAsync(APP_SHARE_URL);
+        window.alert(t('copied'));
+      }
+      return;
+    }
+
+    // Pass the URL only inside `message` — adding a separate `url` field too
+    // duplicates the link in the composed share on iOS.
+    await Share.share({ message: shareText });
+  };
+
   return (
     <ScreenContainer title={t('configuration')}>
+      <SectionLabel label={t('sectionApp')} theme={theme} first />
       <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
         <SettingRow
           icon="grid-outline"
@@ -65,7 +106,7 @@ export default function ConfigScreen() {
             <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
           }
         />
-        
+
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         <SettingRow
@@ -81,9 +122,9 @@ export default function ConfigScreen() {
             />
           }
         />
-        
+
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        
+
         <SettingRow
           icon="language-outline"
           label={t('language')}
@@ -100,12 +141,62 @@ export default function ConfigScreen() {
         />
       </View>
 
+      <SectionLabel label={t('sectionOther')} theme={theme} />
+      <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
+        <SettingRow
+          icon="share-outline"
+          label={t('share')}
+          onPress={handleShare}
+          theme={theme}
+          rightComponent={
+            <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+          }
+        />
+
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        <SettingRow
+          icon="flag-outline"
+          label={t('feedback')}
+          onPress={() => setFeedbackVisible(true)}
+          theme={theme}
+          rightComponent={
+            <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+          }
+        />
+
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        <SettingRow
+          icon="information-circle-outline"
+          label={t('about')}
+          onPress={handleAboutPress}
+          theme={theme}
+          rightComponent={
+            <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+          }
+        />
+      </View>
+
       <View style={{ height: 40 }} />
+
+      <FeedbackModal
+        visible={feedbackVisible}
+        onDismiss={() => setFeedbackVisible(false)}
+        source="config"
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
   settingsGroup: {
     borderRadius: 12,
     overflow: 'hidden'
@@ -141,5 +232,5 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginLeft: 50
-  }
+  },
 });

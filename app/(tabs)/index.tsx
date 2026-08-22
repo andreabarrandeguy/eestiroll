@@ -1,14 +1,16 @@
 import { Icon } from '@/components/Icon';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { getWordTranslation, WordCard } from '@/components/WordCard';
+import { Theme } from '@/constants/Colors';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
 import { AICheckResponse, checkSentenceWithAI } from '@/services/aiService';
+import { EVENTS, track } from '@/services/analytics';
+import { TranslationKey } from '@/utils/translations';
 import { categoryColorMap } from '@/utils/wordData';
-import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +20,9 @@ const languageMap: Record<string, string> = {
   en: "English",
   ru: "Russian",
 };
+
+const BASE_INPUT_HEIGHT = 30;
+const MAX_INPUT_HEIGHT = 120; // matches styles.input.maxHeight
 
 const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -76,6 +81,96 @@ const AIShimmerIcon = ({ size = 20, loading = false, inactiveColor = '#888' }) =
   return <Icon name="paper-plane" size={size} color={color} />;
 };
 
+const AI_LOADING_MESSAGE_KEYS: TranslationKey[] = ['aiLoadingMsg1', 'aiLoadingMsg2', 'aiLoadingMsg3', 'aiLoadingMsg4'];
+
+const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) => string }) => {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const fade = useRef(new Animated.Value(1)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const spinLoop = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spinLoop.start();
+    return () => spinLoop.stop();
+  }, [spin]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Animated.timing(fade, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+        setMsgIndex(i => (i + 1) % AI_LOADING_MESSAGE_KEYS.length);
+        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      });
+    }, 2400);
+    return () => clearInterval(interval);
+  }, [fade]);
+
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 8 }}>
+      <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
+        <Animated.View style={{ transform: [{ rotate }] }}>
+          <Icon name="sparkles-outline" size={16} color={theme.iconInactive} />
+        </Animated.View>
+        <Animated.Text style={{ opacity: fade, color: theme.iconInactive, fontSize: 13, fontWeight: '500' }}>
+          {t(AI_LOADING_MESSAGE_KEYS[msgIndex])}
+        </Animated.Text>
+      </View>
+    </View>
+  );
+};
+
+const AIErrorState = ({
+  theme,
+  t,
+  onRetry,
+  onEdit,
+}: {
+  theme: Theme;
+  t: (key: TranslationKey) => string;
+  onRetry: () => void;
+  onEdit: () => void;
+}) => (
+  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+    <Icon name="alert-circle-outline" size={36} color={theme.iconInactive} />
+    <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 10, textAlign: 'center' }}>
+      {t('aiCheckErrorTitle')}
+    </Text>
+    <Text style={{ color: theme.iconInactive, fontSize: 13, textAlign: 'center', marginTop: 4, maxWidth: 280 }}>
+      {t('aiCheckErrorSubtitle')}
+    </Text>
+    <TouchableOpacity
+      onPress={onRetry}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#EFC320',
+        paddingHorizontal: 20,
+        paddingVertical: 11,
+        borderRadius: 999,
+        marginTop: 16,
+      }}
+    >
+      <Icon name="refresh-outline" size={16} color="#0A0A0A" />
+      <Text style={{ color: '#0A0A0A', fontWeight: '700', fontSize: 14 }}>{t('retry')}</Text>
+    </TouchableOpacity>
+    <TouchableOpacity onPress={onEdit} style={{ marginTop: 12 }}>
+      <Text style={{ color: theme.iconInactive, fontSize: 13, textDecorationLine: 'underline' }}>
+        {t('editSentence')}
+      </Text>
+    </TouchableOpacity>
+  </View>
+);
+
 export default function HomeScreen() {
   const { theme } = useTheme();
   const { t, language } = useTranslations();
@@ -88,13 +183,15 @@ export default function HomeScreen() {
   } = useRandomWords();
 
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [webInputHeight, setWebInputHeight] = useState(BASE_INPUT_HEIGHT);
   const [aiResult, setAiResult] = useState<AICheckResponse | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
   const subscribeModal = useSubscribeModal();
-  
+
   const use3Columns = words.length >= 9;
 
   // When new words appear (new roll), go back to input mode
@@ -102,13 +199,13 @@ export default function HomeScreen() {
     setShowingFeedback(false);
     setAiResult(null);
     setAiLoading(false);
+    setAiError(false);
   }, [refreshKey]);
 
-  useFocusEffect(
-    useCallback(() => {
-      return () => {};
-    }, [])
-  );
+  // Shrink the web input back down once the sentence is cleared (sent, or a new roll)
+  useEffect(() => {
+    if (!sentence) setWebInputHeight(BASE_INPUT_HEIGHT);
+  }, [sentence]);
 
   const handleDoubleTap = (word: string) => {
     const before = sentence.slice(0, cursorPosition);
@@ -122,16 +219,15 @@ export default function HomeScreen() {
     setCursorPosition(event.nativeEvent.selection.start);
   };
 
-  const handleAICheck = useCallback(async () => {
-    if (!sentence.trim()) return;
-
+  const runAICheck = useCallback(async (sentenceToCheck: string) => {
     const aiWords = words.map(w => ({
       estonian: w.word,
       translation: getWordTranslation(w.word, w.category, language),
     }));
 
-    setLastSentence(sentence.trim());
+    setLastSentence(sentenceToCheck);
     setAiResult(null);
+    setAiError(false);
     setShowingFeedback(true);
     setAiLoading(true);
     Keyboard.dismiss();
@@ -139,27 +235,43 @@ export default function HomeScreen() {
     try {
       const result = await checkSentenceWithAI({
         words: aiWords,
-        sentence: sentence.trim(),
+        sentence: sentenceToCheck,
         language: languageMap[language] || "English",
       });
       setAiResult(result);
       setAiRemaining(result.remaining);
-      addEntry(words, sentence.trim(), result);
+      addEntry(words, sentenceToCheck, result);
       subscribeModal.onAICheckSuccess();
       setSentence('');
     } catch (e) {
       if (e instanceof Error && e.message === "daily_limit") {
-        addEntry(words, sentence.trim());
+        addEntry(words, sentenceToCheck);
         setSentence('');
         setAiRemaining(0);
       } else {
         console.error("AI check failed:", e);
-        setShowingFeedback(false);
+        track(EVENTS.AI_CHECK_FAILED);
+        setAiError(true);
       }
     } finally {
       setAiLoading(false);
     }
-  }, [words, sentence, language, addEntry]);
+  }, [words, language, addEntry, subscribeModal, setSentence]);
+
+  const handleAICheck = useCallback(() => {
+    if (!sentence.trim()) return;
+    runAICheck(sentence.trim());
+  }, [sentence, runAICheck]);
+
+  const handleRetry = useCallback(() => {
+    runAICheck(lastSentence);
+  }, [lastSentence, runAICheck]);
+
+  const handleEditSentence = useCallback(() => {
+    setSentence(lastSentence);
+    setShowingFeedback(false);
+    setAiError(false);
+  }, [lastSentence, setSentence]);
 
   const getScoreColor = (score: number) => {
     if (score >= 4) return '#3C8D5F';
@@ -232,17 +344,25 @@ export default function HomeScreen() {
             ]}>
               <TextInput
                 style={[
-                  styles.input, 
+                  styles.input,
                   { color: theme.inputText },
-                  Platform.OS === 'web' && { outlineStyle: 'none', height: 30 } as any
+                  Platform.OS === 'web' && {
+                    outlineStyle: 'none',
+                    height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
+                  } as any
                 ]}
                 placeholder={t('enterSentence')}
                 placeholderTextColor={theme.iconInactive}
                 value={sentence}
                 onChangeText={setSentence}
                 onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
+                onContentSizeChange={
+                  Platform.OS === 'web'
+                    ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
+                    : undefined
+                }
                 maxLength={140}
-                multiline={Platform.OS !== 'web'}
+                multiline
               />
               {sentence.length > 0 && (
                 <TouchableOpacity 
@@ -265,7 +385,13 @@ export default function HomeScreen() {
           </>
         )}
 
-        {showingFeedback && (
+        {showingFeedback && aiError && (
+          <View style={styles.feedbackContainer}>
+            <AIErrorState theme={theme} t={t} onRetry={handleRetry} onEdit={handleEditSentence} />
+          </View>
+        )}
+
+        {showingFeedback && !aiError && (
           <View style={styles.feedbackContainer}>
             {/* Fixed: Score card */}
             {aiResult ? (
@@ -295,9 +421,7 @@ export default function HomeScreen() {
                 {t('dailyLimitReached')}
               </Text>
             ) : (
-              <View style={{ alignItems: 'center', marginVertical: 8 }}>
-                <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
-              </View>
+              <AILoadingState theme={theme} t={t} />
             )}
 
             {/* Fixed: User sentence */}
@@ -319,9 +443,9 @@ export default function HomeScreen() {
                   </View>
                   {aiResult.score < 5 && (
                     <>
-                      {aiResult.core_issue ? (
+                      {aiResult.coreIssue ? (
                         <View style={styles.fieldContainer}>
-                          <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600' }]}>{aiResult.core_issue}</Text>
+                          <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600' }]}>{aiResult.coreIssue}</Text>
                         </View>
                       ) : null}
                       {aiResult.rule ? (
@@ -329,9 +453,9 @@ export default function HomeScreen() {
                           <Text style={[styles.fieldValue, { color: theme.text, fontWeight: '600', fontSize: 18 }]}>{aiResult.rule}</Text>
                         </View>
                       ) : null}
-                      {aiResult.corrected_sentence ? (
+                      {aiResult.correctedSentence ? (
                         <View style={styles.fieldContainer}>
-                          <Text style={[styles.fieldValue, { color: theme.text, fontStyle: 'italic' }]}>{t('correction')}: {aiResult.corrected_sentence}</Text>
+                          <Text style={[styles.fieldValue, { color: theme.text, fontStyle: 'italic' }]}>{t('correction')}: {aiResult.correctedSentence}</Text>
                         </View>
                       ) : null}
                       {aiResult.notes ? (

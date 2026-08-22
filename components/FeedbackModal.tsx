@@ -2,61 +2,43 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { EVENTS, track } from '@/services/analytics';
-import { AlreadySubscribedError, subscribeEmail } from '@/services/subscribers';
+import { FeedbackSource, submitFeedback } from '@/services/feedback';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 
-interface SubscribeModalProps {
+interface FeedbackModalProps {
   visible: boolean;
   onDismiss: () => void;
-  onSubscribed: () => void;
+  source: FeedbackSource;
+  word?: string;
+  category?: string;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function SubscribeModal({ visible, onDismiss, onSubscribed }: SubscribeModalProps) {
+export function FeedbackModal({ visible, onDismiss, source, word, category }: FeedbackModalProps) {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const { t } = useTranslations();
 
-  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
-    if (!EMAIL_REGEX.test(email.trim())) {
-      setErrorMsg('Please enter a valid email');
-      setStatus('error');
-      return;
-    }
+    if (!message.trim()) return;
 
     setStatus('loading');
-    setErrorMsg('');
 
     try {
-      await subscribeEmail({ email, source: 'modal', language });
-      track(EVENTS.SUBSCRIBED, { source: 'modal' });
+      await submitFeedback({ message, source, word, category, language });
+      track(EVENTS.FEEDBACK_SUBMITTED, { source });
       setStatus('success');
-      onSubscribed();
-    } catch (e) {
-      if (e instanceof AlreadySubscribedError) {
-        // Treat as success — don't make the user feel bad about it
-        setStatus('success');
-        onSubscribed();
-        return;
-      }
-      setErrorMsg('Something went wrong. Please try again.');
+    } catch {
       setStatus('error');
     }
   };
 
   const handleClose = () => {
-    if (status !== 'success') {
-      track(EVENTS.SUBSCRIBE_DISMISSED, { source: 'modal' });
-    }
-    setEmail('');
+    setMessage('');
     setStatus('idle');
-    setErrorMsg('');
     onDismiss();
   };
 
@@ -70,40 +52,46 @@ export function SubscribeModal({ visible, onDismiss, onSubscribed }: SubscribeMo
 
           {status === 'success' ? (
             <>
-              <Text style={[styles.title, { color: theme.text }]}>{t('thanks')}! 🎉</Text>
-              <Text style={[styles.subtitle, { color: theme.text }]}>{t('weWillEmailYou')}</Text>
+              <Text style={[styles.title, { color: theme.text }]}>{t('feedbackThanks')}</Text>
               <TouchableOpacity style={[styles.button, { backgroundColor: theme.yellow }]} onPress={handleClose}>
                 <Text style={styles.buttonText}>{t('close')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <Text style={[styles.title, { color: theme.text }]}>{t('subscribeToList')}</Text>
-              <Text style={[styles.subtitle, { color: theme.text }]}>{t('subscribeInfo')}</Text>
+              <Text style={[styles.title, { color: theme.text }]}>{t('feedbackTitle')}</Text>
+              <Text style={[styles.subtitle, { color: theme.text }]}>{t('feedbackInfo')}</Text>
+
+              {word ? (
+                <Text style={[styles.context, { color: theme.iconInactive, borderColor: theme.border }]}>
+                  {t('reportingOn')} “{word}”
+                </Text>
+              ) : null}
 
               <TextInput
                 style={[styles.input, { color: theme.text, borderColor: theme.text }]}
-                placeholder="your@email.com"
+                placeholder={t('feedbackPlaceholder')}
                 placeholderTextColor={theme.text + '80'}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                numberOfLines={4}
                 editable={status !== 'loading'}
               />
 
-              {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+              {status === 'error' ? (
+                <Text style={styles.errorText}>Something went wrong. Please try again.</Text>
+              ) : null}
 
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: theme.blue }, status === 'loading' && styles.buttonDisabled]}
+                style={[styles.button, { backgroundColor: theme.blue }, (status === 'loading' || !message.trim()) && styles.buttonDisabled]}
                 onPress={handleSubmit}
-                disabled={status === 'loading'}
+                disabled={status === 'loading' || !message.trim()}
               >
                 {status === 'loading' ? (
                   <ActivityIndicator color="#0A0A0A" />
                 ) : (
-                  <Text style={styles.buttonText}>{t('notifyMe')}</Text>
+                  <Text style={styles.buttonText}>{t('send')}</Text>
                 )}
               </TouchableOpacity>
             </>
@@ -148,14 +136,24 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 22,
+  },
+  context: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    minHeight: 90,
+    textAlignVertical: 'top',
     marginBottom: 12,
   },
   errorText: {

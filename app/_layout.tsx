@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import 'react-native-reanimated';
@@ -12,7 +13,7 @@ import { HistoryProvider } from '@/contexts/HistoryContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { RandomProvider } from '@/contexts/RandomContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { setPostHogInstance } from '@/services/analytics';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
@@ -62,28 +63,42 @@ export default function RootLayout() {
     prepare();
   }, []);
 
+  const pageTitle = (
+    <Head>
+      <title>EestiRoll</title>
+    </Head>
+  );
+
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={prepare}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <>
+        {pageTitle}
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={prepare}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </>
     );
   }
 
   if (!isReady || !fontsLoaded) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#EFC320" />
-        <Text style={styles.loadingText}>Loading content...</Text>
-      </View>
+      <>
+        {pageTitle}
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#EFC320" />
+          <Text style={styles.loadingText}>Loading content...</Text>
+        </View>
+      </>
     );
   }
 
   const appContent = (
-    <ThemeProvider>
+    <>
+      {pageTitle}
+      <ThemeProvider>
       <LanguageProvider>
         <RandomProvider>
           <CategoryProvider>
@@ -98,7 +113,8 @@ export default function RootLayout() {
           </CategoryProvider>
         </RandomProvider>
       </LanguageProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </>
   );
 
   if (!POSTHOG_API_KEY) {

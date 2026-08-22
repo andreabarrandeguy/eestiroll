@@ -1,14 +1,8 @@
 import { useCategories } from '@/contexts/CategoryContext';
-import { useHistory } from '@/contexts/HistoryContext';
 import { useRandom } from '@/contexts/RandomContext';
+import { Word } from '@/types';
 import { getRandomWords } from '@/utils/wordHelpers';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard } from 'react-native';
-
-interface Word {
-    word: string;
-    category: string;
-}
+import { useEffect, useRef, useState } from 'react';
 
 const MAX_RECENT_WORDS = 25;
 
@@ -30,21 +24,14 @@ export function useRandomWords() {
 
     const { randomTrigger } = useRandom();
     const { categoryCount, availableCategories } = useCategories();
-    const { addEntry } = useHistory();
 
     const generateNewWords = () => {
-        console.log('=== generateNewWords ===');
-        console.log('availableCategories:', availableCategories);
-        console.log('categoryCount:', categoryCount);
-
         // Select random categories from available ones
         const shuffledCategories = shuffleArray(availableCategories);
         const selectedCategories = shuffledCategories.slice(0, categoryCount);
-        console.log('selectedCategories:', selectedCategories);
 
         // Generate new words avoiding recently used ones
         const newWords = getRandomWords(selectedCategories, recentWords.current);
-        console.log('newWords:', newWords);
 
         setWords(newWords);
         setRefreshKey(prev => prev + 1);
@@ -57,18 +44,8 @@ export function useRandomWords() {
         setSentence('');
     };
 
-    const handleSend = useCallback(() => {
-        // Only save if there's a sentence
-        if (sentence.trim().length > 0) {
-            addEntry(words, sentence);
-            setSentence('');
-            Keyboard.dismiss();
-        }
-    }, [words, sentence, addEntry]);
-
     // Trigger generation when random button is pressed
     useEffect(() => {
-        console.log('useEffect triggered:', { randomTrigger, categoryCount, availableCategories });
         if (randomTrigger > 0) {
             generateNewWords();
         }
@@ -79,7 +56,5 @@ export function useRandomWords() {
         refreshKey,
         sentence,
         setSentence,
-        handleSend,
-        generateNewWords
     };
 }

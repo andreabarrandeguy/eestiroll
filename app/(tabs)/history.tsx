@@ -72,7 +72,6 @@ export default function HistoryScreen() {
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [editingNoteTimestamp, setEditingNoteTimestamp] = useState<number | null>(null);
   const [noteText, setNoteText] = useState('');
-  const [showCopied, setShowCopied] = useState<number | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<number[]>([]);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
@@ -238,12 +237,6 @@ export default function HistoryScreen() {
 
                 return (
                   <View key={entry.timestamp} style={[styles.entryContainer, { backgroundColor: theme.cardBackground }]}>
-                    {showCopied === entry.timestamp && (
-                      <View style={styles.copiedOverlay}>
-                        <Text style={styles.copiedText}>{t('copied')}</Text>
-                      </View>
-                    )}
-
                     {/* Preview row: color bar + sentence + actions */}
                     <View style={styles.previewRow}>
                       <View style={[styles.colorBar, { backgroundColor: scoreColor }]}>
@@ -504,14 +497,7 @@ const styles = StyleSheet.create({
   wordChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   wordChipText: { fontSize: 14, fontWeight: '600', color: '#000' },
   aiSection: { borderTopWidth: 1, marginHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
-  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  aiLabel: {
-    fontSize: 12, fontWeight: '700', color: '#3B82F6',
-    backgroundColor: '#EFF6FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
-  },
-  aiScore: { fontSize: 20, fontWeight: '700' },
   aiField: { marginTop: 8 },
-  aiFieldLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
   aiFieldValue: { fontSize: 13, lineHeight: 19 },
   feedbackButtonContainer: {
     borderTopWidth: 1,
@@ -543,10 +529,4 @@ const styles = StyleSheet.create({
   noteInput: { fontSize: 14, borderWidth: 1, borderRadius: 8, padding: 10, minHeight: 60, textAlignVertical: 'top' },
   noteEditActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
   noteEditButton: { padding: 4 },
-  copiedOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center',
-    borderRadius: 12, zIndex: 10,
-  },
-  copiedText: { fontSize: 20, fontWeight: '600', color: '#fff' },
 });

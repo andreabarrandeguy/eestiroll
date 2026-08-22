@@ -1,7 +1,8 @@
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface WordModalProps {
@@ -41,6 +42,7 @@ export function WordModal({
 }: WordModalProps) {
   const { theme } = useTheme();
   const { t } = useTranslations();
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
 
   const secondaryLanguages = SECONDARY_LANGUAGES[currentLanguage] || ['en', 'es'];
   const languageNames = LANGUAGE_NAMES[currentLanguage] || LANGUAGE_NAMES.en;
@@ -52,21 +54,21 @@ export function WordModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable 
+      <Pressable
         style={styles.overlay}
         onPress={onClose}
       >
-        <Pressable 
+        <Pressable
           style={[
             styles.modalContent,
-            { 
+            {
               backgroundColor: theme.cardBackground,
               borderColor: cardColor,
             }
           ]}
           onPress={(e) => e.stopPropagation()}
         >
-          <Pressable 
+          <Pressable
             style={styles.closeButton}
             onPress={onClose}
           >
@@ -84,9 +86,17 @@ export function WordModal({
           <View style={[styles.divider, { backgroundColor: cardColor }]} />
 
           {/* Main translation */}
-          <Text style={[styles.translationLabel, { color: theme.text }]}>
-            {t('translation')}:
-          </Text>
+          <View style={styles.translationLabelRow}>
+            <Text style={[styles.translationLabel, { color: theme.text }]}>
+              {t('translation')}:
+            </Text>
+            <Pressable
+              onPress={() => setFeedbackVisible(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Icon name="flag-outline" size={14} color={theme.iconInactive} />
+            </Pressable>
+          </View>
           <Text style={[styles.translation, { color: theme.text }]}>
             {translation}
           </Text>
@@ -106,6 +116,14 @@ export function WordModal({
           </View>
         </Pressable>
       </Pressable>
+
+      <FeedbackModal
+        visible={feedbackVisible}
+        onDismiss={() => setFeedbackVisible(false)}
+        source="word_modal"
+        word={estonianWord}
+        category={category}
+      />
     </Modal>
   );
 }
@@ -155,13 +173,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 1,
   },
+  translationLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   translationLabel: {
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
     opacity: 0.6,
-    marginBottom: 4,
   },
   translation: {
     fontSize: 20,

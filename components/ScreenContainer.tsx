@@ -33,11 +33,7 @@ export function ScreenContainer({
               <Icon name="arrow-back" size={24} color={theme.text} />
             </TouchableOpacity>
           )}
-          <Text style={[
-            styles.title,
-            { color: theme.text },
-            showBackButton && styles.titleWithBack
-          ]}>
+          <Text style={[styles.title, { color: theme.text }]}>
             {title}
           </Text>
           {showBackButton && <View style={styles.headerSpacer} />}
@@ -108,9 +104,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     flex: 1
-  },
-  titleWithBack: {
-    // When back button exists, title is already centered by flex layout
   },
   headerSpacer: {
     width: 40

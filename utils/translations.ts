@@ -1,4 +1,3 @@
-import { Language } from '@/types';
 
 export const translations = {
     en: {
@@ -19,6 +18,8 @@ export const translations = {
         categories: 'Categories',
         history: 'History',
         language: 'Language',
+        sectionApp: 'App',
+        sectionOther: 'Other',
 
         // Actions
         enterSentence: 'Enter your sentence...',
@@ -61,14 +62,36 @@ export const translations = {
         getFeedback: 'Get feedback',
         continueLearning: 'Continue learning',
         correction: 'Corrected sentence',
+        retry: 'Try again',
+        editSentence: 'Edit sentence',
+        aiCheckErrorTitle: "Couldn't reach the AI",
+        aiCheckErrorSubtitle: 'Your sentence is still here — give it another try.',
+        aiLoadingMsg1: 'Reading your sentence…',
+        aiLoadingMsg2: 'Checking Estonian grammar…',
+        aiLoadingMsg3: 'Comparing with the rules…',
+        aiLoadingMsg4: 'Almost there…',
 
         // Subscriber modal
-        suscribeToList: 'Suscribe to get updated when Eesti Roll app launches',
-        suscribeInfo: 'On the App Store and Google Play soon. Drop your email and we will let you know.',
+        subscribeToList: 'Subscribe to get updated when Eesti Roll app launches',
+        subscribeInfo: 'On the App Store and Google Play soon. Drop your email and we will let you know.',
         notifyMe: 'Notify me',
         thanks: 'Thanks',
         weWillEmailYou: 'We will email you when EestiRoll is on the App Store and Google Play.',
         close: 'Close',
+
+        // Share & About
+        share: 'Share',
+        shareMessage: 'Roll random Estonian words, build a sentence, and get instant AI feedback. Try EestiRoll:',
+        about: 'About',
+
+        // Feedback
+        feedback: 'Feedback',
+        feedbackTitle: 'Send feedback',
+        feedbackInfo: "Found a bug, a wrong translation, or have an idea? Let us know.",
+        feedbackPlaceholder: 'Type your feedback...',
+        reportingOn: 'Reporting an issue with',
+        send: 'Send',
+        feedbackThanks: "Thanks, we'll take a look.",
     },
     es: {
         // Categories
@@ -88,6 +111,8 @@ export const translations = {
         categories: 'Categorías',
         history: 'Historial',
         language: 'Idioma',
+        sectionApp: 'App',
+        sectionOther: 'Otros',
 
         // Actions
         enterSentence: 'Escribe tu oración...',
@@ -130,14 +155,36 @@ export const translations = {
         getFeedback: 'Corregir',
         continueLearning: 'Continuar aprendiendo',
         correction: 'Corrección',
+        retry: 'Reintentar',
+        editSentence: 'Editar oración',
+        aiCheckErrorTitle: 'No pudimos conectar con la IA',
+        aiCheckErrorSubtitle: 'Tu oración sigue ahí — probá de nuevo.',
+        aiLoadingMsg1: 'Leyendo tu oración…',
+        aiLoadingMsg2: 'Revisando la gramática estonia…',
+        aiLoadingMsg3: 'Comparando con las reglas…',
+        aiLoadingMsg4: 'Ya casi…',
 
         // Subscriber modal
-        suscribeToList: 'Suscribite para enterarte cuando la app de EestiRoll este lista',
-        suscribeInfo: 'Pronto en App Store y Google Play. Dejá tu email y te avisamos.',
+        subscribeToList: 'Suscribite para enterarte cuando la app de EestiRoll este lista',
+        subscribeInfo: 'Pronto en App Store y Google Play. Dejá tu email y te avisamos.',
         notifyMe: 'Notificarme',
         thanks: 'Gracias',
         weWillEmailYou: 'Te avisaremos cuando la app de EestiRoll este en App Store y Google Play.',
         close: 'Cerrar',
+
+        // Share & About
+        share: 'Compartir',
+        shareMessage: 'Tira palabras al azar en estonio, armá una oración y recibí feedback instantáneo con IA. Probá EestiRoll:',
+        about: 'Acerca de',
+
+        // Feedback
+        feedback: 'Feedback',
+        feedbackTitle: 'Enviar feedback',
+        feedbackInfo: '¿Encontraste un error, una traducción mal, o tenés una idea? Contanos.',
+        feedbackPlaceholder: 'Escribí tu feedback...',
+        reportingOn: 'Reportando un problema con',
+        send: 'Enviar',
+        feedbackThanks: 'Gracias, lo vamos a revisar.',
     },
     ru: {
         // Categories
@@ -157,6 +204,8 @@ export const translations = {
         categories: 'Категории',
         history: 'История',
         language: 'Язык',
+        sectionApp: 'Приложение',
+        sectionOther: 'Другое',
 
         // Actions
         enterSentence: 'Введите предложение...',
@@ -199,19 +248,37 @@ export const translations = {
         getFeedback: 'Коррексьон',
         continueLearning: 'Продолжайте обучение',
         correction: 'Исправленное предложение',
+        retry: 'Повторить',
+        editSentence: 'Редактировать предложение',
+        aiCheckErrorTitle: 'Не удалось связаться с ИИ',
+        aiCheckErrorSubtitle: 'Ваше предложение сохранено — попробуйте ещё раз.',
+        aiLoadingMsg1: 'Читаем ваше предложение…',
+        aiLoadingMsg2: 'Проверяем эстонскую грамматику…',
+        aiLoadingMsg3: 'Сверяем с правилами…',
+        aiLoadingMsg4: 'Почти готово…',
 
         // Subscriber modal
-        suscribeToList: 'Подпишитесь, чтобы получать новости о запуске приложения Eesti Roll',
-        suscribeInfo: 'Скоро в App Store и Google Play. Оставьте свой email, и мы сообщим вам.',
+        subscribeToList: 'Подпишитесь, чтобы получать новости о запуске приложения Eesti Roll',
+        subscribeInfo: 'Скоро в App Store и Google Play. Оставьте свой email, и мы сообщим вам.',
         notifyMe: 'Уведомить меня',
         thanks: 'Спасибо',
         weWillEmailYou: 'Мы отправим вам письмо, когда EestiRoll появится в App Store и Google Play.',
         close: 'Закрыть',
+
+        // Share & About
+        share: 'Поделиться',
+        shareMessage: 'Собирайте случайные эстонские слова, составляйте предложение и получайте мгновенную обратную связь от ИИ. Попробуйте EestiRoll:',
+        about: 'О приложении',
+
+        // Feedback
+        feedback: 'Отзыв',
+        feedbackTitle: 'Отправить отзыв',
+        feedbackInfo: 'Нашли ошибку, неверный перевод, или есть идея? Напишите нам.',
+        feedbackPlaceholder: 'Напишите ваш отзыв...',
+        reportingOn: 'Сообщить о проблеме с',
+        send: 'Отправить',
+        feedbackThanks: 'Спасибо, мы посмотрим.',
     },
 } as const;
 
 export type TranslationKey = keyof typeof translations.en;
-
-export function getTranslation(language: Language, key: TranslationKey): string {
-    return translations[language][key] || translations.en[key];
-}

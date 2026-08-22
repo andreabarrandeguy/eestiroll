@@ -32,23 +32,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     try {
       const content = await fetchContent();
       
-      // Mapear languages desde la API
+      // Map languages from the API
       const languages = content.data.languages.map((l: any) => ({
         code: l.code,
         name: l.name,
         nativeName: l.native_name
       }));
-      
+
       setAvailableLanguages(languages);
-      
-      // Cargar idioma guardado
+
+      // Load saved language
       const saved = await StorageService.loadLanguage();
       if (saved) {
         setLanguageState(saved);
       }
     } catch (error) {
       console.error('Error loading languages, using fallback:', error);
-      // Usar fallback hardcodeado
+      // Use hardcoded fallback
       setAvailableLanguages(AVAILABLE_LANGUAGES);
     } finally {
       setIsLoading(false);

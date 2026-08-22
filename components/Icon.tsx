@@ -12,9 +12,9 @@ interface IconProps {
   style?: ViewStyle;
 }
 
-// SVG Components para Web
+// SVG Components for Web
 const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWidth?: number }>> = {
-  // Settings (tuerca)
+  // Settings (gear)
   'settings-outline': ({ size, color, strokeWidth = 1.5 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
@@ -22,7 +22,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Time/History (reloj)
+  // Time/History (clock)
   'time-outline': ({ size, color, strokeWidth = 1.5 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={strokeWidth}/>
@@ -40,7 +40,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Chevron forward (flecha derecha)
+  // Chevron forward (right arrow)
   'chevron-forward': ({ size, color, strokeWidth = 2 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
@@ -62,7 +62,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Checkbox (marcado)
+  // Checkbox (checked)
   'checkbox': ({ size, color }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Rect x={3} y={3} width={18} height={18} rx={3} fill={color}/>
@@ -70,7 +70,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Square outline (checkbox vacío)
+  // Square outline (empty checkbox)
   'square-outline': ({ size, color, strokeWidth = 1.5 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Rect x={3} y={3} width={18} height={18} rx={3} stroke={color} strokeWidth={strokeWidth}/>
@@ -133,7 +133,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Paper plane (send) - FILLED, igual que Ionicons
+  // Paper plane (send) - FILLED, matches Ionicons
   'paper-plane': ({ size, color }) => (
     <Svg width={size} height={size} viewBox="0 0 512 512">
       <Path d="M473 39.05a24 24 0 00-25.5-5.46L47.47 185h-.08a24 24 0 001 45.16l.41.13 137.3 58.63a16 16 0 0015.54-3.59L422 80a7.07 7.07 0 0110 10L226.66 310.26a16 16 0 00-3.59 15.54l58.65 137.38c.06.2.12.38.19.57 3.2 9.27 11.3 15.81 21.09 16.25h1a24.63 24.63 0 0023-15.46L478.39 64.62A24 24 0 00473 39.05z" fill={color}/>
@@ -162,7 +162,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Close circle (X en círculo - filled)
+  // Close circle (X in circle - filled)
   'close-circle': ({ size, color }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx={12} cy={12} r={10} fill={color}/>
@@ -171,7 +171,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
-  // Checkmark circle (tick en círculo - filled)
+  // Checkmark circle (tick in circle - filled)
   'checkmark-circle': ({ size, color }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx={12} cy={12} r={10} fill={color}/>
@@ -199,6 +199,47 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
       <Path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
     </Svg>
   ),
+
+  // Share (arrow out of tray)
+  'share-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 15V3M8 7l4-4 4 4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <Path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2v-7" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
+  // Information circle outline
+  'information-circle-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={strokeWidth}/>
+      <Line x1={12} y1={11} x2={12} y2={16} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Circle cx={12} cy={7.8} r={1.1} fill={color}/>
+    </Svg>
+  ),
+
+  // Flag outline (report feedback)
+  'flag-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 21V4a1 1 0 011-1h11.5a.5.5 0 01.4.8l-3.15 4.2a1 1 0 000 1.2l3.15 4.2a.5.5 0 01-.4.8H6a1 1 0 00-1 1z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
+  // Alert circle outline (error state)
+  'alert-circle-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={strokeWidth}/>
+      <Line x1={12} y1={7.5} x2={12} y2={13} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Circle cx={12} cy={16.3} r={1.1} fill={color}/>
+    </Svg>
+  ),
+
+  // Refresh outline (retry)
+  'refresh-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 12a8 8 0 0114.5-4.5M20 12a8 8 0 01-14.5 4.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <Path d="M18.5 3v5h-5M5.5 21v-5h5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
 };
 
 export function Icon({ name, size, color, style }: IconProps) {
@@ -207,7 +248,7 @@ export function Icon({ name, size, color, style }: IconProps) {
     if (SVGIcon) {
       return <SVGIcon size={size} color={color} />;
     }
-    // Fallback: devolver null o un placeholder
+    // Fallback: return null or a placeholder
     console.warn(`Icon "${name}" not found for web`);
     return null;
   }

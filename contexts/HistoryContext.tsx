@@ -32,9 +32,9 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       ...(aiResult && {
         aiScore: aiResult.score,
         aiValidation: aiResult.validation,
-        aiCoreIssue: aiResult.core_issue,
+        aiCoreIssue: aiResult.coreIssue,
         aiRule: aiResult.rule,
-        aiCorrectedSentence: aiResult.corrected_sentence,
+        aiCorrectedSentence: aiResult.correctedSentence,
         aiNotes: aiResult.notes,
       }),
     };
@@ -97,9 +97,9 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
             ...entry,
             aiScore: aiResult.score,
             aiValidation: aiResult.validation,
-            aiCoreIssue: aiResult.core_issue,
+            aiCoreIssue: aiResult.coreIssue,
             aiRule: aiResult.rule,
-            aiCorrectedSentence: aiResult.corrected_sentence,
+            aiCorrectedSentence: aiResult.correctedSentence,
             aiNotes: aiResult.notes,
           }
         : entry

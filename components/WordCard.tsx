@@ -2,6 +2,7 @@ import { WordModal } from '@/components/WordModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { fetchContent } from '@/services/api';
+import { allWords } from '@/utils/wordData';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
@@ -24,10 +25,9 @@ export async function loadTranslations() {
   try {
     const content = await fetchContent();
     cachedTranslations = content.data.words;
-  } catch (error) {
+  } catch {
     console.error('Error loading translations from API');
     // Fallback to wordData.ts
-    const { allWords } = require('@/utils/wordData');
     cachedTranslations = allWords;
   }
 }
@@ -196,6 +196,8 @@ export const WordCard = React.memo(({
     </>
   );
 });
+
+WordCard.displayName = 'WordCard';
 
 const styles = StyleSheet.create({
   card: {

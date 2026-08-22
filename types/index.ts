@@ -21,21 +21,6 @@ export interface Word {
     category: string;
 }
 
-// Component prop types
-export interface WordCardProps {
-    word: string;
-    category: string;
-    color: string;
-    refreshKey: number;
-}
-
-export interface CategoryCardProps {
-    category: string;
-    color: string;
-    isSelected: boolean;
-    onPress: () => void;
-}
-
 // Context types
 export interface CategoryContextType {
     categoryCount: number;
@@ -70,9 +55,4 @@ export interface HistoryContextType {
     updateNote: (timestamp: number, note: string) => void;
     updateEntryAI: (timestamp: number, aiResult: any) => void;
     getUsedWords: () => string[];
-}
-
-export interface RandomContextType {
-    triggerRandom: () => void;
-    randomTrigger: number;
 }

@@ -1,6 +1,22 @@
-# Welcome to your Expo app 👋
+# EestiRoll 🎲
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A gamified Estonian vocabulary app. Roll a random set of Estonian words, build a sentence using them, and get instant AI feedback on your grammar.
+
+Live on web: **[andreabarrandeguy.github.io/eestiroll](https://andreabarrandeguy.github.io/eestiroll/)**
+
+## How it works
+
+1. Roll a hand of random Estonian words (filtered by category and vocabulary level).
+2. Write a sentence using as many of them as you can.
+3. Submit it for an AI check — you get a score out of 5, what's wrong, the grammar rule involved, and a corrected version.
+4. Past attempts are saved to History so you can review them later.
+
+## Tech stack
+
+- **App**: [Expo](https://expo.dev) / React Native (SDK 54), TypeScript, [Expo Router](https://docs.expo.dev/router/introduction/) for file-based routing. Runs on iOS, Android, and Web from one codebase.
+- **AI grammar check**: a Django API hosted on PythonAnywhere, which calls OpenAI and returns a structured evaluation of the submitted sentence.
+- **Data**: [Supabase](https://supabase.com) (Postgres) for the email subscriber list and in-app feedback submissions.
+- **Analytics**: [PostHog](https://posthog.com).
 
 ## Get started
 
@@ -10,41 +26,32 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Add a `.env` file with the Supabase and PostHog keys (see `config/supabase.ts` and `app/_layout.tsx` for the expected `EXPO_PUBLIC_*` variable names).
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   From there you can open it in a [development build](https://docs.expo.dev/develop/development-builds/introduction/), an Android/iOS simulator, [Expo Go](https://expo.dev/go), or the web (press `w`).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- `app/` — screens and routes (Expo Router: file-based, so file names matter).
+- `components/` — shared UI (word cards, modals, the custom `Icon` component that renders SVGs on web and Ionicons on native).
+- `contexts/` — theme, language, categories, history, and the random-word-roll state.
+- `services/` — API clients: the AI grammar check, Supabase feedback/subscribers, analytics.
+- `utils/` — word data and translations (the app UI is available in English, Spanish, and Russian).
 
-## Get a fresh project
-
-When you're ready, run:
+## Deploying the web build
 
 ```bash
-npm run reset-project
+npx expo export -p web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This exports a static site to `dist/`, which is what gets published to GitHub Pages at the URL above.
 
-## Learn more
+## Resetting to a blank template
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Not applicable here — this is a working app, not a fresh scaffold. (`npm run reset-project` is left over from `create-expo-app` and would wipe `app/` into an `app-example/` folder; don't run it.)

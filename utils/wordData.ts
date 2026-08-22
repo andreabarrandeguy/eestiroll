@@ -6,7 +6,7 @@ export const categories = ['VERB', 'NOUN', 'ADJECTIVE', 'PLACE', 'ADVERB', 'TIME
 
 export type Category = typeof categories[number];
 
-// Fallback mínimo - solo 2 palabras por categoría
+// Minimal fallback - only 2 words per category
 export const allWords: Record<Category, WordTranslations[]> = {
     VERB: [
         { et: 'olema', es: 'ser/estar', en: 'to be', ru: 'быть' },
