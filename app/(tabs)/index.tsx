@@ -1,3 +1,4 @@
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { getWordTranslation, WordCard } from '@/components/WordCard';
@@ -85,8 +86,13 @@ const AI_LOADING_MESSAGE_KEYS: TranslationKey[] = ['aiLoadingMsg1', 'aiLoadingMs
 
 const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) => string }) => {
   const [msgIndex, setMsgIndex] = useState(0);
+  const msgIndexRef = useRef(0);
   const fade = useRef(new Animated.Value(1)).current;
   const spin = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    msgIndexRef.current = msgIndex;
+  }, [msgIndex]);
 
   useEffect(() => {
     const spinLoop = Animated.loop(
@@ -102,9 +108,15 @@ const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) =
   }, [spin]);
 
   useEffect(() => {
+    // Cycle through the messages once and settle on the last one — looping back
+    // to "Reading your sentence..." after "Almost there..." would feel dishonest.
     const interval = setInterval(() => {
+      if (msgIndexRef.current >= AI_LOADING_MESSAGE_KEYS.length - 1) {
+        clearInterval(interval);
+        return;
+      }
       Animated.timing(fade, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
-        setMsgIndex(i => (i + 1) % AI_LOADING_MESSAGE_KEYS.length);
+        setMsgIndex(i => Math.min(i + 1, AI_LOADING_MESSAGE_KEYS.length - 1));
         Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
       });
     }, 2400);
@@ -190,6 +202,7 @@ export default function HomeScreen() {
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
+  const [aiReportVisible, setAiReportVisible] = useState(false);
   const subscribeModal = useSubscribeModal();
 
   const use3Columns = words.length >= 9;
@@ -296,14 +309,21 @@ export default function HomeScreen() {
           EestiRoll
         </Text>
 
-        {words.length === 0 && !showingFeedback && (
+        {words.length === 0 && !showingFeedback && refreshKey === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine1')}</Text>
+            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine2')}</Text>
+          </View>
+        )}
+
+        {words.length === 0 && !showingFeedback && refreshKey > 0 && (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyTextBold, { color: theme.text }]}>
               {t('noCategoriesSelected')}
             </Text>
             <View style={styles.configHintContainer}>
               <Text style={[styles.emptyText, { color: theme.text }]}>
-                {t('customizeCategories')} 
+                {t('customizeCategories')}
               </Text>
               <Icon name="settings-outline" size={16} color={theme.text} />
             </View>
@@ -426,7 +446,17 @@ export default function HomeScreen() {
 
             {/* Fixed: User sentence */}
             <View style={[styles.userSentenceContainer, { borderColor: theme.border }]}>
-              <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
+              <View style={styles.userSentenceLabelRow}>
+                <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
+                {aiResult ? (
+                  <TouchableOpacity
+                    onPress={() => setAiReportVisible(true)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Icon name="flag-outline" size={13} color={theme.iconInactive} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
             </View>
 
@@ -488,15 +518,28 @@ export default function HomeScreen() {
     </View>
   );
 
+  const modals = (
+    <>
+      <SubscribeModal
+        visible={subscribeModal.visible}
+        onDismiss={subscribeModal.onDismiss}
+        onSubscribed={subscribeModal.onSubscribed}
+      />
+      <FeedbackModal
+        visible={aiReportVisible}
+        onDismiss={() => setAiReportVisible(false)}
+        source="ai_result"
+        word={lastSentence}
+        context={{ words, sentence: lastSentence, aiResult }}
+      />
+    </>
+  );
+
   if (Platform.OS === 'web') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         {content}
-          <SubscribeModal
-            visible={subscribeModal.visible}
-            onDismiss={subscribeModal.onDismiss}
-            onSubscribed={subscribeModal.onSubscribed}
-          />
+        {modals}
       </SafeAreaView>
     );
   }
@@ -506,11 +549,7 @@ export default function HomeScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         {content}
       </TouchableWithoutFeedback>
-        <SubscribeModal
-          visible={subscribeModal.visible}
-          onDismiss={subscribeModal.onDismiss}
-          onSubscribed={subscribeModal.onSubscribed}
-        />
+      {modals}
     </SafeAreaView>
   );
 }
@@ -538,6 +577,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontSize: 16,
@@ -549,6 +589,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    textAlign: 'center',
   },
   configHintContainer: {
     flexDirection: 'row',
@@ -632,13 +673,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.03)',
   },
+  userSentenceLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   userSentenceLabel: {
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     opacity: 0.5,
-    marginBottom: 4,
   },
   userSentenceText: {
     fontSize: 16,

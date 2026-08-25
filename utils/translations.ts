@@ -22,13 +22,15 @@ export const translations = {
         sectionOther: 'Other',
 
         // Actions
-        enterSentence: 'Enter your sentence...',
+        enterSentence: 'Write a sentence with the words you got (you can adjust their endings for grammar cases)...',
         darkMode: 'Dark Mode',
         translation: 'Translation',
 
         // Messages
         noCategoriesSelected: 'NB!',
         customizeCategories: 'Customize categories in',
+        rollHintLine1: 'Tap the dice below',
+        rollHintLine2: 'to get some Estonian words',
         noHistoryYet: 'No history yet',
         loading: 'Loading...',
         categoriesPerRound: 'Categories per round',
@@ -55,7 +57,7 @@ export const translations = {
 
         // AI
         yourSentence: 'Your sentence',
-        dailyLimitReached: 'Daily corrections limit reached.',
+        dailyLimitReached: "You've used all 5 free corrections for today. Come back tomorrow for more!",
         checkLeft: 'correction left',
         checksLeft: 'corrections left',
         savedToHistory: 'Answer saved to History.',
@@ -73,25 +75,35 @@ export const translations = {
 
         // Subscriber modal
         subscribeToList: 'Subscribe to get updated when Eesti Roll app launches',
-        subscribeInfo: 'On the App Store and Google Play soon. Drop your email and we will let you know.',
+        subscribeInfo: 'On the App Store and Google Play soon. Drop your email to receive the latest updates.',
         notifyMe: 'Notify me',
         thanks: 'Thanks',
-        weWillEmailYou: 'We will email you when EestiRoll is on the App Store and Google Play.',
+        weWillEmailYou: "You'll get an email when EestiRoll is on the App Store and Google Play.",
         close: 'Close',
 
         // Share & About
         share: 'Share',
         shareMessage: 'Roll random Estonian words, build a sentence, and get instant AI feedback. Try EestiRoll:',
         about: 'About',
+        aboutBio: "I'm from Argentina, living in Estonia since 2025. After finishing the A1 course, A2 hit different — new vocabulary kept coming faster than I could actually absorb it. But in daily life, only a handful of words ever stuck: Aitäh, Palun, Tere. EestiRoll started as a game I imagined for myself — a low-pressure way to practice vocabulary and build sentences without needing an excuse or someone to talk to. Just a free moment and a roll of the dice.\n\nIt's built for beginners (A1/A2) wrestling with grammar cases and new words — same as me.",
+        aboutFeaturesTitle: 'What you can do today',
+        aboutFeature1: 'Roll random Estonian words by category and level',
+        aboutFeature2: "Build a sentence and get instant AI feedback — score, what's wrong, the rule, and a correction (5 free corrections a day)",
+        aboutFeature3: 'Review your past attempts in History',
+        aboutFeature4: 'Practice in English, Spanish, or Russian',
+        aboutRoadmapTitle: "What's coming",
+        aboutRoadmap1: 'iOS and Android apps — with accounts and more daily corrections',
+        aboutRoadmap2: 'The rest depends on your feedback',
+        aboutSubscribeCta: 'Subscribe for updates',
 
         // Feedback
         feedback: 'Feedback',
         feedbackTitle: 'Send feedback',
-        feedbackInfo: "Found a bug, a wrong translation, or have an idea? Let us know.",
+        feedbackInfo: "Found a bug, a wrong translation, or have an idea? Share it below.",
         feedbackPlaceholder: 'Type your feedback...',
         reportingOn: 'Reporting an issue with',
         send: 'Send',
-        feedbackThanks: "Thanks, we'll take a look.",
+        feedbackThanks: "Thanks — feedback received!",
     },
     es: {
         // Categories
@@ -115,13 +127,15 @@ export const translations = {
         sectionOther: 'Otros',
 
         // Actions
-        enterSentence: 'Escribe tu oración...',
+        enterSentence: 'Escribí una oración con las palabras que te tocaron (podés ajustar las terminaciones según el caso gramatical)...',
         darkMode: 'Modo Oscuro',
         translation: 'Traducción',
 
         // Messages
         noCategoriesSelected: '¡NB!',
         customizeCategories: 'Personaliza categorías en',
+        rollHintLine1: 'Apretá el dado abajo',
+        rollHintLine2: 'para obtener palabras en estonio',
         noHistoryYet: 'Sin historial aún',
         loading: 'Cargando...',
         categoriesPerRound: 'Categorías por ronda',
@@ -148,7 +162,7 @@ export const translations = {
 
         // AI
         yourSentence: 'Tu oracion',
-        dailyLimitReached: 'Límite diario de correcciones alcanzado.',
+        dailyLimitReached: 'Ya usaste tus 5 consultas gratis de hoy. ¡Volvé mañana por más!',
         checkLeft: 'consulta restante',
         checksLeft: 'consultas restantes',
         savedToHistory: 'Respuesta guardada en Historial.',
@@ -166,25 +180,35 @@ export const translations = {
 
         // Subscriber modal
         subscribeToList: 'Suscribite para enterarte cuando la app de EestiRoll este lista',
-        subscribeInfo: 'Pronto en App Store y Google Play. Dejá tu email y te avisamos.',
+        subscribeInfo: 'Pronto en App Store y Google Play. Dejá tu email para recibir las novedades.',
         notifyMe: 'Notificarme',
         thanks: 'Gracias',
-        weWillEmailYou: 'Te avisaremos cuando la app de EestiRoll este en App Store y Google Play.',
+        weWillEmailYou: 'Vas a recibir un email cuando la app de EestiRoll esté en App Store y Google Play.',
         close: 'Cerrar',
 
         // Share & About
         share: 'Compartir',
-        shareMessage: 'Tira palabras al azar en estonio, armá una oración y recibí feedback instantáneo con IA. Probá EestiRoll:',
+        shareMessage: 'Obtené palabras al azar en estonio, armá una oración y recibí feedback instantáneo con IA. Probá EestiRoll:',
         about: 'Acerca de',
+        aboutBio: 'Soy de Argentina y vivo en Estonia desde 2025. Cuando terminé el curso de A1, al arrancar A2 sentí que el vocabulario nuevo llegaba más rápido de lo que podía procesarlo. En el día a día, solo unas pocas palabras se me quedaron pegadas: Aitäh, Palun, Tere. EestiRoll nació como un juego que imaginé para mí: una forma sin presión de practicar vocabulario y armar oraciones, sin necesitar una excusa ni alguien con quien hablar. Solo un rato libre y una tirada de dados.\n\nEstá pensada para principiantes (A1/A2) que están peleando con los casos gramaticales y el vocabulario nuevo — como yo.',
+        aboutFeaturesTitle: 'Qué podés hacer hoy',
+        aboutFeature1: 'Obtener palabras al azar en estonio, por categoría y nivel',
+        aboutFeature2: 'Armar una oración y recibir feedback instantáneo de la IA — puntaje, qué está mal, la regla, y una corrección (5 consultas gratis por día)',
+        aboutFeature3: 'Revisar tus intentos anteriores en Historial',
+        aboutFeature4: 'Practicar en inglés, español o ruso',
+        aboutRoadmapTitle: 'Qué viene',
+        aboutRoadmap1: 'App en Apple y Google Play — con usuarios y más consultas por día',
+        aboutRoadmap2: 'El resto depende de tu feedback',
+        aboutSubscribeCta: 'Suscribite para novedades',
 
         // Feedback
         feedback: 'Feedback',
         feedbackTitle: 'Enviar feedback',
-        feedbackInfo: '¿Encontraste un error, una traducción mal, o tenés una idea? Contanos.',
+        feedbackInfo: '¿Encontraste un error, una traducción mal, o tenés una idea? Escribilo acá abajo.',
         feedbackPlaceholder: 'Escribí tu feedback...',
         reportingOn: 'Reportando un problema con',
         send: 'Enviar',
-        feedbackThanks: 'Gracias, lo vamos a revisar.',
+        feedbackThanks: 'Gracias, feedback recibido.',
     },
     ru: {
         // Categories
@@ -208,13 +232,15 @@ export const translations = {
         sectionOther: 'Другое',
 
         // Actions
-        enterSentence: 'Введите предложение...',
+        enterSentence: 'Составьте предложение с выпавшими словами (их окончания можно менять по падежам)...',
         darkMode: 'Тёмная тема',
         translation: 'Перевод',
 
         // Messages
         noCategoriesSelected: 'Внимание!',
         customizeCategories: 'Настройте категории в',
+        rollHintLine1: 'Нажмите на кубик внизу',
+        rollHintLine2: 'чтобы получить эстонские слова',
         noHistoryYet: 'История пуста',
         loading: 'Загрузка...',
         categoriesPerRound: 'Категорий за раунд',
@@ -241,7 +267,7 @@ export const translations = {
 
         // AI
         yourSentence: 'Ваше предложение',
-        dailyLimitReached: 'Достигнут суточный лимит корректировок.',
+        dailyLimitReached: 'Вы использовали все 5 бесплатных поправок на сегодня. Возвращайтесь завтра!',
         checkLeft: 'оставшаяся поправка',
         checksLeft: 'оставшиеся исправления',
         savedToHistory: 'Ответ сохранен в истории.',
@@ -259,25 +285,35 @@ export const translations = {
 
         // Subscriber modal
         subscribeToList: 'Подпишитесь, чтобы получать новости о запуске приложения Eesti Roll',
-        subscribeInfo: 'Скоро в App Store и Google Play. Оставьте свой email, и мы сообщим вам.',
+        subscribeInfo: 'Скоро в App Store и Google Play. Оставьте свой email, чтобы получать новости.',
         notifyMe: 'Уведомить меня',
         thanks: 'Спасибо',
-        weWillEmailYou: 'Мы отправим вам письмо, когда EestiRoll появится в App Store и Google Play.',
+        weWillEmailYou: 'Вы получите письмо, когда EestiRoll появится в App Store и Google Play.',
         close: 'Закрыть',
 
         // Share & About
         share: 'Поделиться',
         shareMessage: 'Собирайте случайные эстонские слова, составляйте предложение и получайте мгновенную обратную связь от ИИ. Попробуйте EestiRoll:',
         about: 'О приложении',
+        aboutBio: 'Я из Аргентины, живу в Эстонии с 2025 года. После курса A1 на уровне A2 стало ясно: новая лексика появляется быстрее, чем успеваешь её усвоить. Зато в быту крепко прижились всего несколько слов: Aitäh, Palun, Tere. Так родился EestiRoll — игра для практики без давления: пополнять словарный запас и строить предложения, не нуждаясь в поводе или собеседнике — только свободная минута и бросок кубика.\n\nПриложение для начинающих (A1/A2), кто борется с падежами и новой лексикой.',
+        aboutFeaturesTitle: 'Что уже можно делать',
+        aboutFeature1: 'Собирать случайные эстонские слова по категориям и уровню',
+        aboutFeature2: 'Составлять предложение и получать мгновенную обратную связь от ИИ — оценку, что не так, правило и исправление (5 бесплатных поправок в день)',
+        aboutFeature3: 'Просматривать прошлые попытки в Истории',
+        aboutFeature4: 'Заниматься на английском, испанском или русском',
+        aboutRoadmapTitle: 'Что впереди',
+        aboutRoadmap1: 'Приложения для iOS и Android — с аккаунтами и бо́льшим количеством поправок в день',
+        aboutRoadmap2: 'Остальное зависит от вашего отзыва',
+        aboutSubscribeCta: 'Подпишитесь на новости',
 
         // Feedback
         feedback: 'Отзыв',
         feedbackTitle: 'Отправить отзыв',
-        feedbackInfo: 'Нашли ошибку, неверный перевод, или есть идея? Напишите нам.',
+        feedbackInfo: 'Нашли ошибку, неверный перевод, или есть идея? Напишите здесь.',
         feedbackPlaceholder: 'Напишите ваш отзыв...',
         reportingOn: 'Сообщить о проблеме с',
         send: 'Отправить',
-        feedbackThanks: 'Спасибо, мы посмотрим.',
+        feedbackThanks: 'Спасибо, отзыв получен.',
     },
 } as const;
 

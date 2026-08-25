@@ -12,9 +12,10 @@ interface FeedbackModalProps {
   source: FeedbackSource;
   word?: string;
   category?: string;
+  context?: Record<string, unknown>;
 }
 
-export function FeedbackModal({ visible, onDismiss, source, word, category }: FeedbackModalProps) {
+export function FeedbackModal({ visible, onDismiss, source, word, category, context }: FeedbackModalProps) {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const { t } = useTranslations();
@@ -28,7 +29,7 @@ export function FeedbackModal({ visible, onDismiss, source, word, category }: Fe
     setStatus('loading');
 
     try {
-      await submitFeedback({ message, source, word, category, language });
+      await submitFeedback({ message, source, word, category, language, context });
       track(EVENTS.FEEDBACK_SUBMITTED, { source });
       setStatus('success');
     } catch {
