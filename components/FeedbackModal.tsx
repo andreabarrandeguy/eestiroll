@@ -23,6 +23,8 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
+  const infoText = source === 'ai_result' ? t('feedbackInfoCorrection') : t('feedbackInfo');
+
   const handleSubmit = async () => {
     if (!message.trim()) return;
 
@@ -61,7 +63,7 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
           ) : (
             <>
               <Text style={[styles.title, { color: theme.text }]}>{t('feedbackTitle')}</Text>
-              <Text style={[styles.subtitle, { color: theme.text }]}>{t('feedbackInfo')}</Text>
+              <Text style={[styles.subtitle, { color: theme.text }]}>{infoText}</Text>
 
               {word ? (
                 <Text style={[styles.context, { color: theme.iconInactive, borderColor: theme.border }]}>

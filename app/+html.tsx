@@ -24,8 +24,8 @@ export default function Root({ children }: PropsWithChildren) {
         <meta property="og:image" content={OG_IMAGE_URL} />
         {/* Width/height/type are unnecessary per spec, but WhatsApp's crawler is
             known to silently skip rendering the image without them. */}
-        <meta property="og:image:width" content="1024" />
-        <meta property="og:image:height" content="1024" />
+        <meta property="og:image:width" content="2400" />
+        <meta property="og:image:height" content="1260" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:url" content={APP_URL} />
         <meta property="og:type" content="website" />

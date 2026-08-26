@@ -203,6 +203,8 @@ export default function HomeScreen() {
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
   const [aiReportVisible, setAiReportVisible] = useState(false);
+  const [inputMountKey, setInputMountKey] = useState(0);
+  const wasSentenceEmptyRef = useRef(true);
   const subscribeModal = useSubscribeModal();
 
   const use3Columns = words.length >= 9;
@@ -213,17 +215,35 @@ export default function HomeScreen() {
     setAiResult(null);
     setAiLoading(false);
     setAiError(false);
+    wasSentenceEmptyRef.current = true;
   }, [refreshKey]);
 
-  // Shrink the web input back down once the sentence is cleared (sent, or a new roll)
-  useEffect(() => {
-    if (!sentence) setWebInputHeight(BASE_INPUT_HEIGHT);
-  }, [sentence]);
+  // On web, the box height is driven by the last-measured content size (see
+  // onContentSizeChange below), which only ever grows — a textarea's
+  // scrollHeight can't report less than its current rendered height. So the
+  // moment typing starts, collapse it back down first; the next keystroke's
+  // measurement will then correctly size it to the (short) real content
+  // instead of staying stuck at the placeholder's taller height.
+  const collapseInputIfWasEmpty = (newText: string) => {
+    if (Platform.OS !== 'web') return;
+    const wasEmpty = wasSentenceEmptyRef.current;
+    const isEmpty = newText.length === 0;
+    if (wasEmpty && !isEmpty) {
+      setWebInputHeight(BASE_INPUT_HEIGHT);
+    }
+    wasSentenceEmptyRef.current = isEmpty;
+  };
+
+  const handleSentenceChange = (text: string) => {
+    collapseInputIfWasEmpty(text);
+    setSentence(text);
+  };
 
   const handleDoubleTap = (word: string) => {
     const before = sentence.slice(0, cursorPosition);
     const after = sentence.slice(cursorPosition);
     const newSentence = before + word + after;
+    collapseInputIfWasEmpty(newSentence);
     setSentence(newSentence);
     setCursorPosition(cursorPosition + word.length);
   };
@@ -256,10 +276,14 @@ export default function HomeScreen() {
       addEntry(words, sentenceToCheck, result);
       subscribeModal.onAICheckSuccess();
       setSentence('');
+      setInputMountKey(k => k + 1);
+      wasSentenceEmptyRef.current = true;
     } catch (e) {
       if (e instanceof Error && e.message === "daily_limit") {
         addEntry(words, sentenceToCheck);
         setSentence('');
+        setInputMountKey(k => k + 1);
+        wasSentenceEmptyRef.current = true;
         setAiRemaining(0);
       } else {
         console.error("AI check failed:", e);
@@ -363,6 +387,7 @@ export default function HomeScreen() {
               }
             ]}>
               <TextInput
+                key={`${refreshKey}-${inputMountKey}`}
                 style={[
                   styles.input,
                   { color: theme.inputText },
@@ -374,7 +399,7 @@ export default function HomeScreen() {
                 placeholder={t('enterSentence')}
                 placeholderTextColor={theme.iconInactive}
                 value={sentence}
-                onChangeText={setSentence}
+                onChangeText={handleSentenceChange}
                 onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
                 onContentSizeChange={
                   Platform.OS === 'web'
@@ -420,9 +445,17 @@ export default function HomeScreen() {
                   <Text style={[styles.scoreText, { color: getScoreColor(aiResult.score) }]}>
                     {aiResult.score}<Text style={styles.scoreMax}>/5</Text>
                   </Text>
-                  <Text style={[styles.scoreLabel, { color: theme.text }]}>
-                    {getScoreLabel(aiResult.score)}
-                  </Text>
+                  <View style={styles.scoreLabelGroup}>
+                    <Text style={[styles.scoreLabel, { color: theme.text }]}>
+                      {getScoreLabel(aiResult.score)}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setAiReportVisible(true)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Icon name="flag-outline" size={13} color={theme.iconInactive} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <View style={styles.scorePills}>
                   {[1, 2, 3, 4, 5].map(i => (
@@ -446,17 +479,7 @@ export default function HomeScreen() {
 
             {/* Fixed: User sentence */}
             <View style={[styles.userSentenceContainer, { borderColor: theme.border }]}>
-              <View style={styles.userSentenceLabelRow}>
-                <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
-                {aiResult ? (
-                  <TouchableOpacity
-                    onPress={() => setAiReportVisible(true)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Icon name="flag-outline" size={13} color={theme.iconInactive} />
-                  </TouchableOpacity>
-                ) : null}
-              </View>
+              <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
               <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
             </View>
 
@@ -653,6 +676,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
+  scoreLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   scoreLabel: {
     fontSize: 16,
     fontWeight: '600',
@@ -673,17 +701,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.03)',
   },
-  userSentenceLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
   userSentenceLabel: {
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 4,
     opacity: 0.5,
   },
   userSentenceText: {

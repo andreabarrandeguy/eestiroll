@@ -1,3 +1,4 @@
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { getAllWordTranslations, getWordTranslation } from '@/components/WordCard';
 import { WordModal } from '@/components/WordModal';
@@ -6,7 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { checkSentenceWithAI } from '@/services/aiService';
-import { Word } from '@/types';
+import { HistoryEntry, Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -77,6 +78,7 @@ export default function HistoryScreen() {
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
   const [loadingFeedback, setLoadingFeedback] = useState<number | null>(null);
   const [aiLimitReached, setAiLimitReached] = useState(false);
+  const [reportEntry, setReportEntry] = useState<HistoryEntry | null>(null);
 
   const toggleExpand = useCallback((timestamp: number) => {
     setExpandedEntries(prev => {
@@ -330,6 +332,13 @@ export default function HistoryScreen() {
                                 ) : null}
                               </>
                             )}
+                            <TouchableOpacity
+                              onPress={() => setReportEntry(entry)}
+                              style={styles.aiReportButton}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Icon name="flag-outline" size={13} color={theme.iconInactive} />
+                            </TouchableOpacity>
                           </View>
                         ) : isLoadingThis ? (
                           <View style={[styles.aiSection, { borderTopColor: theme.border }]}>
@@ -417,6 +426,25 @@ export default function HistoryScreen() {
           cardColor={categoryColorMap[selectedWord.category]}
         />
       )}
+
+      <FeedbackModal
+        visible={reportEntry !== null}
+        onDismiss={() => setReportEntry(null)}
+        source="ai_result"
+        word={reportEntry?.sentence}
+        context={reportEntry ? {
+          words: reportEntry.words,
+          sentence: reportEntry.sentence,
+          aiResult: {
+            score: reportEntry.aiScore,
+            validation: reportEntry.aiValidation,
+            coreIssue: reportEntry.aiCoreIssue,
+            rule: reportEntry.aiRule,
+            correctedSentence: reportEntry.aiCorrectedSentence,
+            notes: reportEntry.aiNotes,
+          },
+        } : undefined}
+      />
     </SafeAreaView>
   );
 }
@@ -497,6 +525,7 @@ const styles = StyleSheet.create({
   wordChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   wordChipText: { fontSize: 14, fontWeight: '600', color: '#000' },
   aiSection: { borderTopWidth: 1, marginHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+  aiReportButton: { alignSelf: 'flex-end', marginTop: 6 },
   aiField: { marginTop: 8 },
   aiFieldValue: { fontSize: 13, lineHeight: 19 },
   feedbackButtonContainer: {

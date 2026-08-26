@@ -67,7 +67,7 @@ export default function AboutScreen() {
       <ScreenContainer title={t('about')} showBackButton>
         <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
           <Image
-            source={require('@/assets/images/icon.png')}
+            source={require('@/assets/images/dice-static.png')}
             style={styles.avatar}
             resizeMode="contain"
           />
@@ -128,7 +128,8 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: 15,
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
   sectionLabel: {
     fontSize: 12,
