@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import Head from 'expo-router/head';
@@ -8,12 +7,12 @@ import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import 'react-native-reanimated';
 
 import { loadTranslations } from '@/components/WordCard';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { CategoryProvider } from '@/contexts/CategoryContext';
 import { HistoryProvider } from '@/contexts/HistoryContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { RandomProvider } from '@/contexts/RandomContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { setPostHogInstance } from '@/services/analytics';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
@@ -37,7 +36,6 @@ function AnalyticsInitializer() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +58,9 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
+    // One-time content fetch on mount; prepare() is also reused as the Retry
+    // button's handler, so it can't be restructured to avoid the indirection.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     prepare();
   }, []);
 
@@ -99,20 +100,20 @@ export default function RootLayout() {
     <>
       {pageTitle}
       <ThemeProvider>
+      <AuthProvider>
       <LanguageProvider>
         <RandomProvider>
           <CategoryProvider>
             <HistoryProvider>
-              <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                </Stack>
-                <StatusBar style="auto" />
-              </NavigationThemeProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="auto" />
             </HistoryProvider>
           </CategoryProvider>
         </RandomProvider>
       </LanguageProvider>
+      </AuthProvider>
       </ThemeProvider>
     </>
   );

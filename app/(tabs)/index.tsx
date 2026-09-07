@@ -1,14 +1,17 @@
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
+import { SignInPromptModal } from '@/components/SignInPromptModal';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { getWordTranslation, WordCard } from '@/components/WordCard';
 import { Theme } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
+import { useSignInPromptModal } from '@/hooks/useSignInPromptModal';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
-import { AICheckResponse, checkSentenceWithAI } from '@/services/aiService';
+import { AICheckResponse, checkSentenceWithAI, DailyLimitError, SessionInvalidError } from '@/services/aiService';
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
 import { categoryColorMap } from '@/utils/wordData';
@@ -26,7 +29,7 @@ const BASE_INPUT_HEIGHT = 30;
 const MAX_INPUT_HEIGHT = 120; // matches styles.input.maxHeight
 
 const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const [opacity] = useState(() => new Animated.Value(0.3));
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -87,8 +90,8 @@ const AI_LOADING_MESSAGE_KEYS: TranslationKey[] = ['aiLoadingMsg1', 'aiLoadingMs
 const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) => string }) => {
   const [msgIndex, setMsgIndex] = useState(0);
   const msgIndexRef = useRef(0);
-  const fade = useRef(new Animated.Value(1)).current;
-  const spin = useRef(new Animated.Value(0)).current;
+  const [fade] = useState(() => new Animated.Value(1));
+  const [spin] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     msgIndexRef.current = msgIndex;
@@ -202,19 +205,31 @@ export default function HomeScreen() {
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
+  const [aiIsAuthenticated, setAiIsAuthenticated] = useState(false);
   const [aiReportVisible, setAiReportVisible] = useState(false);
   const [inputMountKey, setInputMountKey] = useState(0);
   const wasSentenceEmptyRef = useRef(true);
   const subscribeModal = useSubscribeModal();
+  const signInPromptModal = useSignInPromptModal();
+  const { signOut } = useAuth();
+  const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
 
   const use3Columns = words.length >= 9;
 
-  // When new words appear (new roll), go back to input mode
-  useEffect(() => {
+  // When new words appear (new roll), go back to input mode. Adjusted directly
+  // during render (rather than in an effect) since it's just resetting state to
+  // match a new refreshKey, not synchronizing with anything external.
+  if (refreshKey !== prevRefreshKey) {
+    setPrevRefreshKey(refreshKey);
     setShowingFeedback(false);
     setAiResult(null);
     setAiLoading(false);
     setAiError(false);
+  }
+
+  // Refs can't be written during render (unlike state) — this piece of the
+  // same reset stays in an effect.
+  useEffect(() => {
     wasSentenceEmptyRef.current = true;
   }, [refreshKey]);
 
@@ -273,18 +288,28 @@ export default function HomeScreen() {
       });
       setAiResult(result);
       setAiRemaining(result.remaining);
+      setAiIsAuthenticated(result.isAuthenticated);
       addEntry(words, sentenceToCheck, result);
       subscribeModal.onAICheckSuccess();
       setSentence('');
       setInputMountKey(k => k + 1);
       wasSentenceEmptyRef.current = true;
     } catch (e) {
-      if (e instanceof Error && e.message === "daily_limit") {
+      if (e instanceof DailyLimitError) {
         addEntry(words, sentenceToCheck);
         setSentence('');
         setInputMountKey(k => k + 1);
         wasSentenceEmptyRef.current = true;
         setAiRemaining(0);
+        setAiIsAuthenticated(e.isAuthenticated);
+        if (!e.isAuthenticated) {
+          signInPromptModal.trigger();
+        }
+      } else if (e instanceof SessionInvalidError) {
+        console.error("AI check failed: invalid session, signing out", e);
+        signOut().catch(() => {});
+        track(EVENTS.AI_CHECK_FAILED);
+        setAiError(true);
       } else {
         console.error("AI check failed:", e);
         track(EVENTS.AI_CHECK_FAILED);
@@ -293,7 +318,7 @@ export default function HomeScreen() {
     } finally {
       setAiLoading(false);
     }
-  }, [words, language, addEntry, subscribeModal, setSentence]);
+  }, [words, language, addEntry, subscribeModal, setSentence, signInPromptModal, signOut]);
 
   const handleAICheck = useCallback(() => {
     if (!sentence.trim()) return;
@@ -471,7 +496,7 @@ export default function HomeScreen() {
               </View>
             ) : aiRemaining === 0 ? (
               <Text style={{ color: '#E95A35', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
-                {t('dailyLimitReached')}
+                {t(aiIsAuthenticated ? 'dailyLimitReachedAuth' : 'dailyLimitReachedAnon')}
               </Text>
             ) : (
               <AILoadingState theme={theme} t={t} />
@@ -554,6 +579,11 @@ export default function HomeScreen() {
         source="ai_result"
         word={lastSentence}
         context={{ words, sentence: lastSentence, aiResult }}
+      />
+      <SignInPromptModal
+        visible={signInPromptModal.visible}
+        onDismiss={signInPromptModal.onDismiss}
+        onSignIn={signInPromptModal.hide}
       />
     </>
   );

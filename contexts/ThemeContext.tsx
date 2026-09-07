@@ -16,10 +16,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadTheme();
-  }, []);
-
   const loadTheme = async () => {
     try {
       const saved = await StorageService.loadTheme();
@@ -32,6 +28,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // One-time content fetch on mount, setting local state when it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTheme();
+  }, []);
 
   const toggleTheme = async () => {
     const newMode: ThemeMode = themeMode === 'dark' ? 'light' : 'dark';

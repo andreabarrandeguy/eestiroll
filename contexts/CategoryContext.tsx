@@ -14,10 +14,6 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
   const [vocabLevel, setVocabLevelState] = useState<VocabLevel>('A1');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadContent();
-  }, []);
-
   const loadContent = async () => {
     try {
       const content = await fetchContent();
@@ -41,6 +37,12 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // One-time content fetch on mount, setting local state when it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadContent();
+  }, []);
 
   const availableCategories = allCategories.filter(cat => !excludedCategories.includes(cat));
   const maxExclusions = allCategories.length - categoryCount;

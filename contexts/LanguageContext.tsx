@@ -24,10 +24,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadContent();
-  }, []);
-
   const loadContent = async () => {
     try {
       const content = await fetchContent();
@@ -54,6 +50,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // One-time content fetch on mount, setting local state when it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadContent();
+  }, []);
 
   const setLanguage = async (newLanguage: Language) => {
     setLanguageState(newLanguage);

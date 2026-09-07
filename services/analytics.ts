@@ -11,6 +11,13 @@ export const track = (eventName: string, properties?: Record<string, any>) => {
     posthogInstance.capture(eventName, properties);
 };
 
+// A super-property (not posthog.identify()) so accounts don't turn PostHog
+// into another store of personal data that account deletion has to reach into.
+export const setAuthSuperProperty = (isAuthenticated: boolean) => {
+    if (!posthogInstance) return;
+    posthogInstance.register({ is_authenticated: isAuthenticated });
+};
+
 export const EVENTS = {
     ROLL: 'roll_performed',
     CATEGORY_TOGGLED: 'category_toggled',
@@ -23,4 +30,10 @@ export const EVENTS = {
     SUBSCRIBE_DISMISSED: 'subscribe_dismissed',
     SHARE: 'share_tapped',
     FEEDBACK_SUBMITTED: 'feedback_submitted',
+    SIGN_IN_STARTED: 'sign_in_started',
+    SIGN_IN_COMPLETED: 'sign_in_completed',
+    SIGN_OUT: 'sign_out',
+    ACCOUNT_DELETED: 'account_deleted',
+    SIGN_IN_PROMPT_SHOWN: 'sign_in_prompt_shown',
+    SIGN_IN_PROMPT_DISMISSED: 'sign_in_prompt_dismissed',
 } as const;

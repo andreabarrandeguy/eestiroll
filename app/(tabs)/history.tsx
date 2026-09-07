@@ -6,10 +6,10 @@ import { useHistory } from '@/contexts/HistoryContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import { checkSentenceWithAI } from '@/services/aiService';
+import { checkSentenceWithAI, DailyLimitError } from '@/services/aiService';
 import { HistoryEntry, Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,7 +26,7 @@ const getScoreColor = (score: number) => {
 };
 
 const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const [opacity] = useState(() => new Animated.Value(0.3));
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -78,6 +78,7 @@ export default function HistoryScreen() {
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
   const [loadingFeedback, setLoadingFeedback] = useState<number | null>(null);
   const [aiLimitReached, setAiLimitReached] = useState(false);
+  const [aiIsAuthenticated, setAiIsAuthenticated] = useState(false);
   const [reportEntry, setReportEntry] = useState<HistoryEntry | null>(null);
 
   const toggleExpand = useCallback((timestamp: number) => {
@@ -175,10 +176,12 @@ export default function HistoryScreen() {
         language: languageMap[language] || "English",
       });
       updateEntryAI(entry.timestamp, result);
+      setAiIsAuthenticated(result.isAuthenticated);
       if (result.remaining === 0) setAiLimitReached(true);
     } catch (e) {
-      if (e instanceof Error && e.message === "daily_limit") {
+      if (e instanceof DailyLimitError) {
         setAiLimitReached(true);
+        setAiIsAuthenticated(e.isAuthenticated);
       } else {
         console.error("AI check failed:", e);
       }
@@ -360,7 +363,7 @@ export default function HistoryScreen() {
                             >
                               <Icon name="sparkles-outline" size={16} color="#3B82F6" />
                               <Text style={styles.feedbackButtonText}>
-                                {aiLimitReached ? t('dailyLimitReached') : t('getFeedback')}
+                                {aiLimitReached ? t(aiIsAuthenticated ? 'dailyLimitReachedAuth' : 'dailyLimitReachedAnon') : t('getFeedback')}
                               </Text>
                             </TouchableOpacity>
                           </View>

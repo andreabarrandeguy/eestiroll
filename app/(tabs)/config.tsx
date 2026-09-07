@@ -2,6 +2,7 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
@@ -56,7 +57,12 @@ export default function ConfigScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { currentLanguageOption } = useLanguage();
   const { t } = useTranslations();
+  const { status, email } = useAuth();
   const [feedbackVisible, setFeedbackVisible] = useState(false);
+
+  const handleAccountPress = () => {
+    router.push('/account');
+  };
 
   const handleCategoriesPress = () => {
     router.push('/categories');
@@ -95,7 +101,25 @@ export default function ConfigScreen() {
 
   return (
     <ScreenContainer title={t('configuration')}>
-      <SectionLabel label={t('sectionApp')} theme={theme} first />
+      <SectionLabel label={t('account')} theme={theme} first />
+      <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
+        <SettingRow
+          icon="person-circle-outline"
+          label={t('account')}
+          onPress={handleAccountPress}
+          theme={theme}
+          rightComponent={
+            <View style={styles.settingRight}>
+              <Text style={[styles.settingValue, { color: theme.iconInactive }]}>
+                {status === 'authenticated' ? email : t('signIn')}
+              </Text>
+              <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+            </View>
+          }
+        />
+      </View>
+
+      <SectionLabel label={t('sectionApp')} theme={theme} />
       <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
         <SettingRow
           icon="grid-outline"

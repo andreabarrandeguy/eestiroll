@@ -56,3 +56,15 @@ export interface HistoryContextType {
     updateEntryAI: (timestamp: number, aiResult: any) => void;
     getUsedWords: () => string[];
 }
+
+export type AuthStatus = 'loading' | 'anonymous' | 'authenticated';
+
+export interface AuthContextType {
+    status: AuthStatus;
+    userId: string | null;
+    email: string | null;
+    sendOtp: (email: string) => Promise<void>;
+    verifyOtp: (email: string, token: string) => Promise<void>;
+    signOut: () => Promise<void>;
+    deleteAccount: () => Promise<void>;
+}

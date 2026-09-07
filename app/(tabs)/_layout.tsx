@@ -4,14 +4,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { EVENTS, track } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function TabLayout() {
   const router = useRouter();
   const { triggerRandom, randomTrigger } = useRandom();
   const { theme, isDark } = useTheme();
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const [shakeAnim] = useState(() => new Animated.Value(0));
   const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // Before the first roll, gently wiggle the dice every couple seconds to

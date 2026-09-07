@@ -9,10 +9,6 @@ const HistoryContext = createContext<HistoryContextType | undefined>(undefined);
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
   const loadHistory = async () => {
     try {
       const saved = await StorageService.loadHistory();
@@ -23,6 +19,12 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       console.error('Error loading history:', error);
     }
   };
+
+  useEffect(() => {
+    // One-time content fetch on mount, setting local state when it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadHistory();
+  }, []);
 
   const addEntry = async (words: Word[], sentence: string, aiResult?: any) => {
     const newEntry: HistoryEntry = {
