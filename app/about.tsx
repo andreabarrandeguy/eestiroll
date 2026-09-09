@@ -6,7 +6,7 @@ import { Theme } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TranslationKey } from '@/utils/translations';
 import { useTranslations } from '@/hooks/useTranslations';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -56,6 +56,7 @@ function FeedbackListRow({
 export default function AboutScreen() {
   const { theme } = useTheme();
   const { t } = useTranslations();
+  const router = useRouter();
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [subscribeVisible, setSubscribeVisible] = useState(false);
 
@@ -93,6 +94,10 @@ export default function AboutScreen() {
 
         <Pressable onPress={() => setSubscribeVisible(true)} style={styles.subscribeCta}>
           <Text style={[styles.subscribeCtaText, { color: theme.iconInactive }]}>{t('aboutSubscribeCta')}</Text>
+        </Pressable>
+
+        <Pressable onPress={() => router.push('/privacy')} style={styles.subscribeCta}>
+          <Text style={[styles.subscribeCtaText, { color: theme.iconInactive }]}>{t('privacyPolicy')}</Text>
         </Pressable>
 
         <View style={{ height: 20 }} />

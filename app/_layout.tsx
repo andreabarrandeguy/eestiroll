@@ -129,6 +129,10 @@ export default function RootLayout() {
       options={{
         host: POSTHOG_HOST,
         captureAppLifecycleEvents: true,
+        disableGeoip: true,
+      }}
+      autocapture={{
+        captureScreens: false,
         captureTouches: false,
       }}
     >
