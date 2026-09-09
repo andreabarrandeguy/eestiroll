@@ -149,7 +149,7 @@ export default function AccountScreen() {
 
   const renderEmailStep = () => (
     <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-      <Text style={[styles.title, { color: theme.text }]}>{t('signIn')}</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{t('continueWithEmail')}</Text>
       <Text style={[styles.subtitle, { color: theme.iconInactive }]}>{t('signInBenefit')}</Text>
 
       <Field label={t('emailLabel')} theme={theme}>

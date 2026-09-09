@@ -78,7 +78,6 @@ export default function HistoryScreen() {
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
   const [loadingFeedback, setLoadingFeedback] = useState<number | null>(null);
   const [aiLimitReached, setAiLimitReached] = useState(false);
-  const [aiIsAuthenticated, setAiIsAuthenticated] = useState(false);
   const [reportEntry, setReportEntry] = useState<HistoryEntry | null>(null);
 
   const toggleExpand = useCallback((timestamp: number) => {
@@ -176,12 +175,10 @@ export default function HistoryScreen() {
         language: languageMap[language] || "English",
       });
       updateEntryAI(entry.timestamp, result);
-      setAiIsAuthenticated(result.isAuthenticated);
       if (result.remaining === 0) setAiLimitReached(true);
     } catch (e) {
       if (e instanceof DailyLimitError) {
         setAiLimitReached(true);
-        setAiIsAuthenticated(e.isAuthenticated);
       } else {
         console.error("AI check failed:", e);
       }
@@ -363,7 +360,7 @@ export default function HistoryScreen() {
                             >
                               <Icon name="sparkles-outline" size={16} color="#3B82F6" />
                               <Text style={styles.feedbackButtonText}>
-                                {aiLimitReached ? t(aiIsAuthenticated ? 'dailyLimitReachedAuth' : 'dailyLimitReachedAnon') : t('getFeedback')}
+                                {aiLimitReached ? t('dailyLimitReachedShort') : t('getFeedback')}
                               </Text>
                             </TouchableOpacity>
                           </View>

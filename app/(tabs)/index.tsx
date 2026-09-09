@@ -302,9 +302,6 @@ export default function HomeScreen() {
         wasSentenceEmptyRef.current = true;
         setAiRemaining(0);
         setAiIsAuthenticated(e.isAuthenticated);
-        if (!e.isAuthenticated) {
-          signInPromptModal.trigger();
-        }
       } else if (e instanceof SessionInvalidError) {
         console.error("AI check failed: invalid session, signing out", e);
         signOut().catch(() => {});
@@ -318,7 +315,7 @@ export default function HomeScreen() {
     } finally {
       setAiLoading(false);
     }
-  }, [words, language, addEntry, subscribeModal, setSentence, signInPromptModal, signOut]);
+  }, [words, language, addEntry, subscribeModal, setSentence, signOut]);
 
   const handleAICheck = useCallback(() => {
     if (!sentence.trim()) return;

@@ -57,8 +57,9 @@ export const translations = {
 
         // AI
         yourSentence: 'Your sentence',
-        dailyLimitReachedAnon: "You've used all 5 free corrections for today. Sign in for 20 a day, or come back tomorrow.",
-        dailyLimitReachedAuth: "You've used all 20 corrections for today. Come back tomorrow for more!",
+        dailyLimitReachedAnon: "You've used your free correction for today. We saved your sentence in History — come back tomorrow to get feedback on it.",
+        dailyLimitReachedAuth: "You've used your correction for today. We saved your sentence in History — come back tomorrow to get feedback on it.",
+        dailyLimitReachedShort: 'Limit reached for today',
         checkLeft: 'correction left',
         checksLeft: 'corrections left',
         savedToHistory: 'Answer saved to History.',
@@ -85,8 +86,9 @@ export const translations = {
         // Account
         account: 'Account',
         signIn: 'Sign in',
+        continueWithEmail: 'Continue with email',
         signOut: 'Sign out',
-        signInBenefit: '20 corrections a day instead of 5',
+        signInBenefit: 'Keep your account for what’s coming next',
         emailLabel: 'Email',
         emailPlaceholder: 'you@email.com',
         invalidEmail: 'Please enter a valid email',
@@ -105,8 +107,8 @@ export const translations = {
         deleteAccount: 'Delete account',
         deleteAccountWarning: "This permanently deletes your account and everything tied to it. This can't be undone.",
         deleteAccountConfirm: 'Delete my account',
-        signInPromptTitle: 'Out of corrections for today',
-        signInPromptBody: 'Sign in with your email to get 20 corrections a day instead of 5.',
+        signInPromptTitle: 'Create an account',
+        signInPromptBody: 'Sign in with your email to keep an account for what’s coming next.',
         notNow: 'Not now',
 
         // Share & About
@@ -116,11 +118,11 @@ export const translations = {
         aboutBio: "EestiRoll is a game I made up to get through this first stage of learning Estonian. It'll probably be useful to you if:\n• You're at an A1/A2 level\n• You've picked up some basic vocabulary and want to practice grammar cases, but day-to-day you barely get past saying \"Aitäh\" to someone\n\nPersonally, I like:\n• Getting exposed to words outside my everyday use, but still essential ones\n• Knowing each exercise takes less than 5 minutes",
         aboutFeaturesTitle: 'What you can do today',
         aboutFeature1: 'Roll random Estonian words by configurable category and level',
-        aboutFeature2: "Build a sentence and get instant AI feedback — score, what's wrong, the rule, and a correction (5 free corrections a day)",
+        aboutFeature2: "Build a sentence and get instant AI feedback — score, what's wrong, the rule, and a correction (1 free correction a day)",
         aboutFeature3: 'Review your past attempts in History',
         aboutFeature4: 'Supported languages: English, Spanish, and Russian',
         aboutRoadmapTitle: "What's coming",
-        aboutRoadmap1: 'iOS and Android apps — with accounts and more daily corrections',
+        aboutRoadmap1: 'iOS and Android apps, with an optional subscription for more corrections',
         aboutRoadmap2: 'The rest depends on your feedback',
         aboutSubscribeCta: 'Subscribe for updates',
 
@@ -191,8 +193,9 @@ export const translations = {
 
         // AI
         yourSentence: 'Tu oracion',
-        dailyLimitReachedAnon: 'Ya usaste tus 5 correcciones gratis de hoy. Iniciá sesión para tener 20 por día, o volvé mañana.',
-        dailyLimitReachedAuth: 'Ya usaste tus 20 correcciones de hoy. ¡Volvé mañana por más!',
+        dailyLimitReachedAnon: 'Ya usaste tu corrección gratis de hoy. Guardamos tu oración en el Historial — volvé mañana para pedirle feedback.',
+        dailyLimitReachedAuth: 'Ya usaste tu corrección de hoy. Guardamos tu oración en el Historial — volvé mañana para pedirle feedback.',
+        dailyLimitReachedShort: 'Límite alcanzado por hoy',
         checkLeft: 'consulta restante',
         checksLeft: 'consultas restantes',
         savedToHistory: 'Respuesta guardada en Historial.',
@@ -219,8 +222,9 @@ export const translations = {
         // Account
         account: 'Cuenta',
         signIn: 'Iniciar sesión',
+        continueWithEmail: 'Continuar con tu email',
         signOut: 'Cerrar sesión',
-        signInBenefit: '20 correcciones por día en vez de 5',
+        signInBenefit: 'Mantené tu cuenta para lo que viene',
         emailLabel: 'Email',
         emailPlaceholder: 'tu@email.com',
         invalidEmail: 'Ingresá un email válido',
@@ -239,8 +243,8 @@ export const translations = {
         deleteAccount: 'Borrar cuenta',
         deleteAccountWarning: 'Esto borra tu cuenta y todo lo asociado a ella para siempre. No se puede deshacer.',
         deleteAccountConfirm: 'Borrar mi cuenta',
-        signInPromptTitle: 'Se acabaron las correcciones de hoy',
-        signInPromptBody: 'Iniciá sesión con tu email para tener 20 correcciones por día en vez de 5.',
+        signInPromptTitle: 'Creá una cuenta',
+        signInPromptBody: 'Iniciá sesión con tu email para mantener tu cuenta lista para lo que viene.',
         notNow: 'Ahora no',
 
         // Share & About
@@ -250,11 +254,11 @@ export const translations = {
         aboutBio: 'EestiRoll es un juego que me inventé para navegar esta primera etapa de aprender estonio. Probablemente te resulte útil si:\n• Estás a un nivel A1/A2\n• Aprendiste vocabulario básico y querés practicar los casos gramaticales, pero en el día a día apenas le decís «Aitäh» a alguien\n\nPersonalmente, me gusta:\n• Poder exponerme a palabras fuera de mi uso cotidiano, pero esenciales en sí\n• La facilidad de saber que cada ejercicio lleva menos de 5 minutos',
         aboutFeaturesTitle: 'Qué podés hacer hoy',
         aboutFeature1: 'Obtener palabras al azar en estonio, por categoría y nivel configurables',
-        aboutFeature2: 'Armar una oración y recibir feedback instantáneo de la IA — puntaje, qué está mal, la regla, y una corrección (5 consultas gratis por día)',
+        aboutFeature2: 'Armar una oración y recibir feedback instantáneo de la IA — puntaje, qué está mal, la regla, y una corrección (1 consulta gratis por día)',
         aboutFeature3: 'Revisar tus intentos anteriores en Historial',
         aboutFeature4: 'Idiomas soportados: inglés, español y ruso',
         aboutRoadmapTitle: 'Qué viene',
-        aboutRoadmap1: 'App en Apple y Google Play — con usuarios y más consultas por día',
+        aboutRoadmap1: 'Apps en iOS y Android, con una suscripción opcional para más consultas',
         aboutRoadmap2: 'El resto depende de tu feedback',
         aboutSubscribeCta: 'Suscribite para novedades',
 
@@ -325,8 +329,9 @@ export const translations = {
 
         // AI
         yourSentence: 'Ваше предложение',
-        dailyLimitReachedAnon: 'Вы использовали все 5 бесплатных поправок на сегодня. Войдите в аккаунт, чтобы получать 20 в день, или возвращайтесь завтра.',
-        dailyLimitReachedAuth: 'Вы использовали все 20 поправок на сегодня. Возвращайтесь завтра!',
+        dailyLimitReachedAnon: 'Вы использовали свою бесплатную поправку на сегодня. Мы сохранили ваше предложение в Истории — возвращайтесь завтра, чтобы получить отзыв.',
+        dailyLimitReachedAuth: 'Вы использовали свою поправку на сегодня. Мы сохранили ваше предложение в Истории — возвращайтесь завтра, чтобы получить отзыв.',
+        dailyLimitReachedShort: 'Дневной лимит исчерпан',
         checkLeft: 'оставшаяся поправка',
         checksLeft: 'оставшиеся исправления',
         savedToHistory: 'Ответ сохранен в истории.',
@@ -353,8 +358,9 @@ export const translations = {
         // Account
         account: 'Аккаунт',
         signIn: 'Войти',
+        continueWithEmail: 'Продолжить с email',
         signOut: 'Выйти',
-        signInBenefit: '20 поправок в день вместо 5',
+        signInBenefit: 'Сохраните аккаунт для будущих функций',
         emailLabel: 'Email',
         emailPlaceholder: 'you@email.com',
         invalidEmail: 'Введите правильный email',
@@ -373,8 +379,8 @@ export const translations = {
         deleteAccount: 'Удалить аккаунт',
         deleteAccountWarning: 'Это навсегда удалит ваш аккаунт и всё, что с ним связано. Отменить это будет нельзя.',
         deleteAccountConfirm: 'Удалить мой аккаунт',
-        signInPromptTitle: 'На сегодня поправки закончились',
-        signInPromptBody: 'Войдите с помощью email, чтобы получать 20 поправок в день вместо 5.',
+        signInPromptTitle: 'Создайте аккаунт',
+        signInPromptBody: 'Войдите с помощью email, чтобы сохранить аккаунт для будущих функций.',
         notNow: 'Не сейчас',
 
         // Share & About
@@ -384,11 +390,11 @@ export const translations = {
         aboutBio: 'EestiRoll — игра, придуманная, чтобы пройти этот первый этап изучения эстонского. Скорее всего, она будет вам полезна, если:\n• Вы на уровне A1/A2\n• Вы выучили базовую лексику и хотите потренировать падежи, но в повседневной жизни едва говорите «Aitäh» кому-нибудь\n\nЛично мне нравится:\n• Возможность знакомиться со словами вне повседневного обихода, но по сути необходимыми\n• Знать, что каждое упражнение занимает меньше 5 минут',
         aboutFeaturesTitle: 'Что уже можно делать',
         aboutFeature1: 'Собирать случайные эстонские слова по настраиваемым категориям и уровню',
-        aboutFeature2: 'Составлять предложение и получать мгновенную обратную связь от ИИ — оценку, что не так, правило и исправление (5 бесплатных поправок в день)',
+        aboutFeature2: 'Составлять предложение и получать мгновенную обратную связь от ИИ — оценку, что не так, правило и исправление (1 бесплатная поправка в день)',
         aboutFeature3: 'Просматривать прошлые попытки в Истории',
         aboutFeature4: 'Поддерживаемые языки: английский, испанский и русский',
         aboutRoadmapTitle: 'Что впереди',
-        aboutRoadmap1: 'Приложения для iOS и Android — с аккаунтами и бо́льшим количеством поправок в день',
+        aboutRoadmap1: 'Приложения для iOS и Android, с платной подпиской на больше поправок',
         aboutRoadmap2: 'Остальное зависит от вашего отзыва',
         aboutSubscribeCta: 'Подпишитесь на новости',
 

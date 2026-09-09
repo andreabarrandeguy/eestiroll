@@ -39,7 +39,7 @@ function SettingRow({
         <View style={styles.settingIcon}>
           <Icon name={icon} size={22} color={theme.text} />
         </View>
-        <Text style={[styles.settingLabel, { color: theme.text }]}>{label}</Text>
+        <Text style={[styles.settingLabel, { color: theme.text }]} numberOfLines={1}>{label}</Text>
       </View>
       {rightComponent}
     </TouchableOpacity>
@@ -109,8 +109,12 @@ export default function ConfigScreen() {
           onPress={handleAccountPress}
           theme={theme}
           rightComponent={
-            <View style={styles.settingRight}>
-              <Text style={[styles.settingValue, { color: theme.iconInactive }]}>
+            <View style={[styles.settingRight, styles.settingRightShrink]}>
+              <Text
+                style={[styles.settingValue, { color: theme.iconInactive }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {status === 'authenticated' ? email : t('signIn')}
               </Text>
               <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
@@ -249,9 +253,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center'
   },
+  settingRightShrink: {
+    flexShrink: 1,
+    maxWidth: 190,
+    marginLeft: 12,
+  },
   settingValue: {
     fontSize: 16,
-    marginRight: 8
+    marginRight: 8,
+    flexShrink: 1,
   },
   divider: {
     height: 1,

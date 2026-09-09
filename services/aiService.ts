@@ -1,13 +1,15 @@
+import { Platform } from 'react-native';
 import { getAccessToken } from './auth';
 import { EVENTS, track } from './analytics';
 
 const AI_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/check/";
 
-// Fallback limits used only if the backend hasn't been updated yet to
-// return `limit`/`is_authenticated` itself (see the backend spec for the
-// account-aware quota). Keep these in sync with the copy in translations.ts.
-const ANON_LIMIT_FALLBACK = 5;
-const AUTH_LIMIT_FALLBACK = 20;
+// Fallback limit used only if the backend hasn't been updated yet to return
+// `limit`/`is_authenticated` itself (see the backend spec for the
+// account-aware quota). Signing in doesn't raise the daily cap for now —
+// every check costs real money — so anonymous and authenticated share the
+// same fallback. Keep in sync with the copy in translations.ts.
+const DAILY_LIMIT_FALLBACK = 1;
 
 interface AICheckRequest {
     words: { estonian: string; translation: string }[];
@@ -72,6 +74,11 @@ export async function checkSentenceWithAI(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            // Lets the backend tell this codebase's clients apart from the
+            // older, still-live web build (which never sends this header) so
+            // quota changes here don't silently affect that deployment.
+            // See docs/backend-account-quota-spec.md.
+            "X-Client-Platform": Platform.OS,
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(request),
@@ -86,7 +93,7 @@ export async function checkSentenceWithAI(
         const isAuthenticated = raw.is_authenticated ?? !!token;
         throw new DailyLimitError(
             raw.remaining ?? 0,
-            raw.limit ?? (isAuthenticated ? AUTH_LIMIT_FALLBACK : ANON_LIMIT_FALLBACK),
+            raw.limit ?? DAILY_LIMIT_FALLBACK,
             isAuthenticated
         );
     }
@@ -105,7 +112,7 @@ export async function checkSentenceWithAI(
         correctedSentence: raw.corrected_sentence,
         notes: raw.notes,
         remaining: raw.remaining,
-        limit: raw.limit ?? (isAuthenticated ? AUTH_LIMIT_FALLBACK : ANON_LIMIT_FALLBACK),
+        limit: raw.limit ?? DAILY_LIMIT_FALLBACK,
         isAuthenticated,
     };
 }
