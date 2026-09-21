@@ -233,6 +233,13 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
+  // Create/pencil outline (edit)
+  'create-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
   // Refresh outline (retry)
   'refresh-outline': ({ size, color, strokeWidth = 1.5 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

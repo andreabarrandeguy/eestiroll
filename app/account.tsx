@@ -7,7 +7,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { EVENTS, track } from '@/services/analytics';
 import { InvalidCodeError, OtpRateLimitError } from '@/services/auth';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,12 +37,17 @@ export default function AccountScreen() {
   const [error, setError] = useState('');
   const [resendSeconds, setResendSeconds] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const codeInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (resendSeconds <= 0) return;
     const interval = setInterval(() => setResendSeconds((s) => s - 1), 1000);
     return () => clearInterval(interval);
   }, [resendSeconds]);
+
+  useEffect(() => {
+    if (step === 'code') codeInputRef.current?.focus();
+  }, [step]);
 
   const handleSendCode = async () => {
     if (!EMAIL_REGEX.test(email.trim())) {
@@ -65,8 +70,9 @@ export default function AccountScreen() {
     }
   };
 
-  const handleVerifyCode = async () => {
-    if (code.trim().length !== 6) {
+  const handleVerifyCode = async (codeOverride?: string) => {
+    const codeToVerify = codeOverride ?? code;
+    if (codeToVerify.trim().length !== 6) {
       setError(t('invalidCode'));
       return;
     }
@@ -75,13 +81,22 @@ export default function AccountScreen() {
     setLoading(true);
 
     try {
-      await verifyOtp(email, code);
+      await verifyOtp(email, codeToVerify);
       track(EVENTS.SIGN_IN_COMPLETED);
       setCode('');
     } catch (e) {
       setError(e instanceof InvalidCodeError ? t('invalidCode') : t('somethingWentWrong'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCodeChange = (text: string) => {
+    const digits = text.replace(/[^0-9]/g, '').slice(0, 6);
+    setCode(digits);
+    if (error) setError('');
+    if (digits.length === 6 && !loading) {
+      handleVerifyCode(digits);
     }
   };
 
@@ -189,11 +204,12 @@ export default function AccountScreen() {
       </Text>
 
       <TextInput
+        ref={codeInputRef}
         style={[styles.input, styles.codeInput, { color: theme.text, borderColor: theme.border }]}
         placeholder={t('codePlaceholder')}
         placeholderTextColor={theme.iconInactive}
         value={code}
-        onChangeText={setCode}
+        onChangeText={handleCodeChange}
         keyboardType="number-pad"
         autoComplete="one-time-code"
         textContentType="oneTimeCode"
@@ -205,7 +221,7 @@ export default function AccountScreen() {
 
       <TouchableOpacity
         style={[styles.primaryButton, { backgroundColor: theme.blue }, loading && styles.disabled]}
-        onPress={handleVerifyCode}
+        onPress={() => handleVerifyCode()}
         disabled={loading}
       >
         {loading ? <ActivityIndicator color="#F2F2F2" /> : <Text style={styles.primaryButtonText}>{t('verifyCode')}</Text>}

@@ -14,7 +14,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { AICheckResponse, checkSentenceWithAI, DailyLimitError, SessionInvalidError } from '@/services/aiService';
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
-import { categoryColorMap } from '@/utils/wordData';
+import { Category, categoryColorMap } from '@/utils/wordData';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -86,6 +86,18 @@ const AIShimmerIcon = ({ size = 20, loading = false, inactiveColor = '#888' }) =
 };
 
 const AI_LOADING_MESSAGE_KEYS: TranslationKey[] = ['aiLoadingMsg1', 'aiLoadingMsg2', 'aiLoadingMsg3', 'aiLoadingMsg4'];
+
+const EXAMPLE_WORDS: { category: Category; word: string }[] = [
+  { category: 'PLACE', word: 'Kodu' },
+  { category: 'PRONOUN', word: 'Ma' },
+  { category: 'VERB', word: 'Olema' },
+];
+
+const EXAMPLE_SENTENCE_PARTS: { text: string; category: Category }[] = [
+  { text: 'Ma', category: 'PRONOUN' },
+  { text: 'olen', category: 'VERB' },
+  { text: 'kodus', category: 'PLACE' },
+];
 
 const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) => string }) => {
   const [msgIndex, setMsgIndex] = useState(0);
@@ -208,6 +220,7 @@ export default function HomeScreen() {
   const [aiIsAuthenticated, setAiIsAuthenticated] = useState(false);
   const [aiReportVisible, setAiReportVisible] = useState(false);
   const [inputMountKey, setInputMountKey] = useState(0);
+  const [exampleVisible, setExampleVisible] = useState(true);
   const wasSentenceEmptyRef = useRef(true);
   const subscribeModal = useSubscribeModal();
   const signInPromptModal = useSignInPromptModal();
@@ -225,6 +238,7 @@ export default function HomeScreen() {
     setAiResult(null);
     setAiLoading(false);
     setAiError(false);
+    setExampleVisible(true);
   }
 
   // Refs can't be written during render (unlike state) — this piece of the
@@ -357,8 +371,13 @@ export default function HomeScreen() {
 
         {words.length === 0 && !showingFeedback && refreshKey === 0 && (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine1')}</Text>
-            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine2')}</Text>
+            <View style={[styles.stepCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+              <View style={styles.stepHeaderRow}>
+                <Text style={styles.stepHeaderEmoji}>🎲</Text>
+                <Text style={[styles.stepTitle, { color: theme.text }]}>{t('rollHintTitle')}</Text>
+              </View>
+              <Text style={[styles.stepSubtitle, { color: theme.iconInactive }]}>{t('rollHintSubtitle')}</Text>
+            </View>
           </View>
         )}
 
@@ -400,53 +419,97 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <View style={[
-              styles.inputContainer, 
-              { 
-                backgroundColor: theme.inputBackground,
-                borderWidth: 1,
-                borderColor: theme.border
-              }
-            ]}>
-              <TextInput
-                key={`${refreshKey}-${inputMountKey}`}
-                style={[
-                  styles.input,
-                  { color: theme.inputText },
-                  Platform.OS === 'web' && {
-                    outlineStyle: 'none',
-                    height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
-                  } as any
-                ]}
-                placeholder={t('enterSentence')}
-                placeholderTextColor={theme.iconInactive}
-                value={sentence}
-                onChangeText={handleSentenceChange}
-                onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
-                onContentSizeChange={
-                  Platform.OS === 'web'
-                    ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
-                    : undefined
+            <View style={[styles.builderCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+              <View style={styles.stepHeaderRow}>
+                <Icon name="create-outline" size={18} color={theme.text} />
+                <Text style={[styles.stepTitle, { color: theme.text }]}>{t('sentenceBuilderTitle')}</Text>
+              </View>
+              <Text style={[styles.stepSubtitle, { color: theme.iconInactive }]}>{t('sentenceBuilderSubtitle')}</Text>
+
+              {exampleVisible && (
+                <>
+                  <View style={[styles.builderDivider, { backgroundColor: theme.border }]} />
+                  <Text style={[styles.builderExampleLabel, { color: theme.iconInactive }]}>
+                    {t('sentenceBuilderExampleLabel')}
+                  </Text>
+                  <View style={styles.builderChipsRow}>
+                    {EXAMPLE_WORDS.map((ex) => (
+                      <View
+                        key={ex.word}
+                        style={[styles.builderChip, { backgroundColor: categoryColorMap[ex.category] }]}
+                      >
+                        <Text style={styles.builderChipCategory}>{t(ex.category as any)}</Text>
+                        <Text style={styles.builderChipWord}>{ex.word}</Text>
+                      </View>
+                    ))}
+                    <Icon name="chevron-forward" size={16} color={theme.iconInactive} />
+                  </View>
+                  <Text style={[styles.builderFormHint, { color: theme.iconInactive }]}>
+                    {t('sentenceBuilderFormHint')}
+                  </Text>
+                  <Text style={styles.builderExampleSentence}>
+                    {EXAMPLE_SENTENCE_PARTS.map((part, i) => (
+                      <Text key={part.text} style={{ color: categoryColorMap[part.category] }}>
+                        {part.text}{i < EXAMPLE_SENTENCE_PARTS.length - 1 ? ' ' : ''}
+                      </Text>
+                    ))}
+                  </Text>
+                </>
+              )}
+
+              <View style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  marginTop: exampleVisible ? 16 : 12,
                 }
-                maxLength={140}
-                multiline
-              />
+              ]}>
+                <TextInput
+                  key={`${refreshKey}-${inputMountKey}`}
+                  style={[
+                    styles.input,
+                    { color: theme.inputText },
+                    Platform.OS === 'web' && {
+                      outlineStyle: 'none',
+                      height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
+                    } as any
+                  ]}
+                  placeholder={t('enterSentence')}
+                  placeholderTextColor={theme.iconInactive}
+                  value={sentence}
+                  onChangeText={handleSentenceChange}
+                  onFocus={() => setExampleVisible(false)}
+                  onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
+                  onContentSizeChange={
+                    Platform.OS === 'web'
+                      ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
+                      : undefined
+                  }
+                  maxLength={140}
+                  multiline
+                />
+                {sentence.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={handleAICheck}
+                    disabled={aiLoading}
+                  >
+                    {aiRemaining !== 0 ? (
+                      <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
+                    ) : (
+                      <Icon
+                        name="paper-plane"
+                        size={20}
+                        color={aiLoading ? theme.iconInactive : theme.inputText}
+                      />
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
               {sentence.length > 0 && (
-                <TouchableOpacity 
-                  style={styles.sendButton} 
-                  onPress={handleAICheck}
-                  disabled={aiLoading}
-                >
-                  {aiRemaining !== 0 ? (
-                    <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
-                  ) : (
-                    <Icon 
-                      name="paper-plane" 
-                      size={20} 
-                      color={aiLoading ? theme.iconInactive : theme.inputText} 
-                    />
-                  )}
-                </TouchableOpacity>
+                <Text style={[styles.sendHint, { color: theme.iconInactive }]}>{t('sendHint')}</Text>
               )}
             </View>
           </>
@@ -747,5 +810,86 @@ const styles = StyleSheet.create({
   fieldValue: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  stepCard: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+  },
+  stepHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepHeaderEmoji: {
+    fontSize: 18,
+  },
+  stepTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  stepSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  builderCard: {
+    marginTop: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+  },
+  builderDivider: {
+    height: 1,
+    marginTop: 14,
+    marginBottom: 12,
+  },
+  builderExampleLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  builderChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  builderChip: {
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  builderChipCategory: {
+    fontSize: 9,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    color: '#0A0A0A',
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+  builderChipWord: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0A0A0A',
+    textAlign: 'center',
+  },
+  builderFormHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 10,
+  },
+  builderExampleSentence: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  sendHint: {
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
