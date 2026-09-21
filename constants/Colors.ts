@@ -3,7 +3,7 @@ export const CategoryColors = {
     yellow: '#E7CF61',
     red: '#BD492C',
     purple: '#5A3B76',
-    lightpurple: '#91909C',
+    lightpurple: '#AEA1B2',
     blue: '#DDC690',
     lightblue: '#90A9E4',
     pink: '#AD6F83',
