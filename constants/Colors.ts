@@ -1,15 +1,15 @@
 // Category colors (same for both themes)
 export const CategoryColors = {
-    yellow: '#EFC320',
-    red: '#E95A35',
+    yellow: '#E7CF61',
+    red: '#BD492C',
     purple: '#5A3B76',
-    lightpurple: '#B566FF',
-    blue: '#3468DC',
-    lightblue: '#6D91FF',
-    pink: '#EB579C',
-    lightpink: '#E591AD',
-    green: '#3C8D5F',
-    lightgreen: '#8EC7A3'
+    lightpurple: '#91909C',
+    blue: '#DDC690',
+    lightblue: '#90A9E4',
+    pink: '#AD6F83',
+    lightpink: '#DBABC1',
+    green: '#4B7C6B',
+    lightgreen: '#A6E8BB'
 } as const;
 
 // Theme-specific colors
