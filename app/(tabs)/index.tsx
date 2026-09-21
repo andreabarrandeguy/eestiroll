@@ -371,13 +371,8 @@ export default function HomeScreen() {
 
         {words.length === 0 && !showingFeedback && refreshKey === 0 && (
           <View style={styles.emptyContainer}>
-            <View style={[styles.stepCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-              <View style={styles.stepHeaderRow}>
-                <Text style={styles.stepHeaderEmoji}>🎲</Text>
-                <Text style={[styles.stepTitle, { color: theme.text }]}>{t('rollHintTitle')}</Text>
-              </View>
-              <Text style={[styles.stepSubtitle, { color: theme.iconInactive }]}>{t('rollHintSubtitle')}</Text>
-            </View>
+            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine1')}</Text>
+            <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine2')}</Text>
           </View>
         )}
 
@@ -811,19 +806,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  stepCard: {
-    width: '100%',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-  },
   stepHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  stepHeaderEmoji: {
-    fontSize: 18,
   },
   stepTitle: {
     fontSize: 17,

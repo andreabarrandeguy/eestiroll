@@ -32,12 +32,12 @@ export const translations = {
         sentenceBuilderExampleLabel: 'Example',
         sentenceBuilderFormHint: 'Words can change form: olema → olen, kodu → kodus.',
         sendHint: 'Tap send to get feedback on your sentence',
-        rollHintTitle: 'Roll the dice!',
-        rollHintSubtitle: 'Tap the dice below to get random Estonian words to build a sentence with.',
 
         // Messages
         noCategoriesSelected: 'NB!',
         customizeCategories: 'Customize categories in',
+        rollHintLine1: 'Tap the dice below',
+        rollHintLine2: 'to get some Estonian words',
         noHistoryYet: 'No history yet',
         loading: 'Loading...',
         categoriesPerRound: 'Categories per round',
@@ -176,12 +176,12 @@ export const translations = {
         sentenceBuilderExampleLabel: 'Ejemplo',
         sentenceBuilderFormHint: 'Las palabras pueden cambiar de forma: olema → olen, kodu → kodus.',
         sendHint: 'Tocá enviar para recibir feedback de tu oración',
-        rollHintTitle: '¡Girá el dado!',
-        rollHintSubtitle: 'Tocá el dado de abajo para obtener palabras al azar en estonio y armar una oración.',
 
         // Messages
         noCategoriesSelected: '¡NB!',
         customizeCategories: 'Personaliza categorías en',
+        rollHintLine1: 'Apretá el dado abajo',
+        rollHintLine2: 'para obtener palabras en estonio',
         noHistoryYet: 'Sin historial aún',
         loading: 'Cargando...',
         categoriesPerRound: 'Categorías por ronda',
@@ -320,12 +320,12 @@ export const translations = {
         sentenceBuilderExampleLabel: 'Пример',
         sentenceBuilderFormHint: 'Слова могут изменяться: olema → olen, kodu → kodus.',
         sendHint: 'Нажмите отправить, чтобы получить отзыв о предложении',
-        rollHintTitle: 'Бросьте кубик!',
-        rollHintSubtitle: 'Нажмите на кубик внизу, чтобы получить случайные эстонские слова и составить предложение.',
 
         // Messages
         noCategoriesSelected: 'Внимание!',
         customizeCategories: 'Настройте категории в',
+        rollHintLine1: 'Нажмите на кубик внизу',
+        rollHintLine2: 'чтобы получить эстонские слова',
         noHistoryYet: 'История пуста',
         loading: 'Загрузка...',
         categoriesPerRound: 'Категорий за раунд',
