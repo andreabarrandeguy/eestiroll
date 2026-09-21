@@ -16,7 +16,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { setPostHogInstance } from '@/services/analytics';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -38,6 +38,10 @@ function AnalyticsInitializer() {
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const colorScheme = useColorScheme();
+  const isDarkBoot = colorScheme !== 'light';
+  const bootBackground = isDarkBoot ? '#0A0A0A' : '#F2F2F2';
+  const bootText = isDarkBoot ? '#F2F2F2' : '#0A0A0A';
 
   const [fontsLoaded] = useFonts({
     ...Ionicons.font,
@@ -74,7 +78,7 @@ export default function RootLayout() {
     return (
       <>
         {pageTitle}
-        <View style={styles.centerContainer}>
+        <View style={[styles.centerContainer, { backgroundColor: bootBackground }]}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={prepare}>
             <Text style={styles.retryText}>Retry</Text>
@@ -88,9 +92,9 @@ export default function RootLayout() {
     return (
       <>
         {pageTitle}
-        <View style={styles.centerContainer}>
+        <View style={[styles.centerContainer, { backgroundColor: bootBackground }]}>
           <ActivityIndicator size="large" color="#EFC320" />
-          <Text style={styles.loadingText}>Loading content...</Text>
+          <Text style={[styles.loadingText, { color: bootText }]}>Loading content...</Text>
         </View>
       </>
     );
@@ -147,11 +151,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0A0A0A',
     padding: 20,
   },
   loadingText: {
-    color: '#F2F2F2',
     marginTop: 20,
     fontSize: 16,
   },

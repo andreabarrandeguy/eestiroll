@@ -158,7 +158,10 @@ export default function AccountScreen() {
           placeholder={t('emailPlaceholder')}
           placeholderTextColor={theme.iconInactive}
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (error) setError('');
+          }}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"

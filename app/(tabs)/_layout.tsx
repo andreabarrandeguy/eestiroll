@@ -6,11 +6,13 @@ import { BlurView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const router = useRouter();
   const { triggerRandom, randomTrigger } = useRandom();
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -127,7 +129,7 @@ export default function TabLayout() {
           position: 'absolute',
           backgroundColor: 'transparent',
           borderTopWidth: 0,
-          paddingBottom: 90,
+          paddingBottom: Platform.OS === 'web' ? 90 : 90 + insets.bottom,
           elevation: 0,
           shadowOpacity: 0,
           shadowOffset: { width: 0, height: 0 },
@@ -199,9 +201,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   blurContainer: {
-    width: 39,
-    height: 39,
-    borderRadius: 30,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
