@@ -221,13 +221,14 @@ export default function HomeScreen() {
   const [aiReportVisible, setAiReportVisible] = useState(false);
   const [inputMountKey, setInputMountKey] = useState(0);
   const [exampleVisible, setExampleVisible] = useState(true);
+  const [inputFocused, setInputFocused] = useState(false);
   const wasSentenceEmptyRef = useRef(true);
   const subscribeModal = useSubscribeModal();
   const signInPromptModal = useSignInPromptModal();
   const { signOut } = useAuth();
   const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
 
-  const use3Columns = words.length >= 9;
+  const use3Columns = words.length >= 5;
 
   // When new words appear (new roll), go back to input mode. Adjusted directly
   // during render (rather than in an effect) since it's just resetting state to
@@ -394,12 +395,9 @@ export default function HomeScreen() {
           <>
             <View style={styles.wordsContainer}>
               {words.map((item, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.wordWrapper,
-                    { width: use3Columns ? '32%' : '48%' }
-                  ]}
+                <View
+                  key={index}
+                  style={{ width: use3Columns ? '30%' : '48%' }}
                 >
                   <WordCard 
                     word={item.word} 
@@ -414,99 +412,97 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <View style={[styles.builderCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-              <View style={styles.stepHeaderRow}>
-                <Icon name="create-outline" size={18} color={theme.text} />
-                <Text style={[styles.stepTitle, { color: theme.text }]}>{t('sentenceBuilderTitle')}</Text>
-              </View>
-              <Text style={[styles.stepSubtitle, { color: theme.iconInactive }]}>{t('sentenceBuilderSubtitle')}</Text>
+            <View style={styles.stepHeaderRow}>
+              <Icon name="create-outline" size={18} color={theme.text} />
+              <Text style={[styles.stepTitle, { color: theme.text }]}>{t('sentenceBuilderTitle')}</Text>
+            </View>
+            <Text style={[styles.stepSubtitle, { color: theme.iconInactive }]}>{t('sentenceBuilderSubtitle')}</Text>
 
-              {exampleVisible && (
-                <>
-                  <View style={[styles.builderDivider, { backgroundColor: theme.border }]} />
-                  <Text style={[styles.builderExampleLabel, { color: theme.iconInactive }]}>
-                    {t('sentenceBuilderExampleLabel')}
-                  </Text>
-                  <View style={styles.builderChipsRow}>
-                    {EXAMPLE_WORDS.map((ex) => (
-                      <View
-                        key={ex.word}
-                        style={[styles.builderChip, { backgroundColor: categoryColorMap[ex.category] }]}
-                      >
-                        <Text style={styles.builderChipCategory}>{t(ex.category as any)}</Text>
-                        <Text style={styles.builderChipWord}>{ex.word}</Text>
-                      </View>
-                    ))}
-                    <Icon name="chevron-forward" size={16} color={theme.iconInactive} />
-                  </View>
-                  <Text style={[styles.builderFormHint, { color: theme.iconInactive }]}>
-                    {t('sentenceBuilderFormHint')}
-                  </Text>
-                  <Text style={styles.builderExampleSentence}>
-                    {EXAMPLE_SENTENCE_PARTS.map((part, i) => (
-                      <Text key={part.text} style={{ color: categoryColorMap[part.category] }}>
-                        {part.text}{i < EXAMPLE_SENTENCE_PARTS.length - 1 ? ' ' : ''}
-                      </Text>
-                    ))}
-                  </Text>
-                </>
-              )}
-
-              <View style={[
-                styles.inputContainer,
-                {
-                  backgroundColor: theme.inputBackground,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  marginTop: exampleVisible ? 16 : 12,
+            <View style={[
+              styles.inputContainer,
+              {
+                backgroundColor: theme.inputBackground,
+                borderWidth: inputFocused ? 2 : 1,
+                borderColor: inputFocused ? '#3468DC' : theme.border,
+                marginTop: 16,
+              }
+            ]}>
+              <TextInput
+                key={`${refreshKey}-${inputMountKey}`}
+                style={[
+                  styles.input,
+                  { color: theme.inputText },
+                  Platform.OS === 'web' && {
+                    outlineStyle: 'none',
+                    height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
+                  } as any
+                ]}
+                placeholder={t('enterSentence')}
+                placeholderTextColor={theme.iconInactive}
+                value={sentence}
+                onChangeText={handleSentenceChange}
+                onFocus={() => { setExampleVisible(false); setInputFocused(true); }}
+                onBlur={() => setInputFocused(false)}
+                onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
+                onContentSizeChange={
+                  Platform.OS === 'web'
+                    ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
+                    : undefined
                 }
-              ]}>
-                <TextInput
-                  key={`${refreshKey}-${inputMountKey}`}
-                  style={[
-                    styles.input,
-                    { color: theme.inputText },
-                    Platform.OS === 'web' && {
-                      outlineStyle: 'none',
-                      height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
-                    } as any
-                  ]}
-                  placeholder={t('enterSentence')}
-                  placeholderTextColor={theme.iconInactive}
-                  value={sentence}
-                  onChangeText={handleSentenceChange}
-                  onFocus={() => setExampleVisible(false)}
-                  onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
-                  onContentSizeChange={
-                    Platform.OS === 'web'
-                      ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
-                      : undefined
-                  }
-                  maxLength={140}
-                  multiline
-                />
-                {sentence.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.sendButton}
-                    onPress={handleAICheck}
-                    disabled={aiLoading}
-                  >
-                    {aiRemaining !== 0 ? (
-                      <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
-                    ) : (
-                      <Icon
-                        name="paper-plane"
-                        size={20}
-                        color={aiLoading ? theme.iconInactive : theme.inputText}
-                      />
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
+                maxLength={140}
+                multiline
+              />
               {sentence.length > 0 && (
-                <Text style={[styles.sendHint, { color: theme.iconInactive }]}>{t('sendHint')}</Text>
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={handleAICheck}
+                  disabled={aiLoading}
+                >
+                  {aiRemaining !== 0 ? (
+                    <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
+                  ) : (
+                    <Icon
+                      name="paper-plane"
+                      size={20}
+                      color={aiLoading ? theme.iconInactive : theme.inputText}
+                    />
+                  )}
+                </TouchableOpacity>
               )}
             </View>
+            {sentence.length > 0 && (
+              <Text style={[styles.sendHint, { color: theme.iconInactive }]}>{t('sendHint')}</Text>
+            )}
+
+            {exampleVisible && (
+              <View style={[styles.builderExampleCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <Text style={[styles.builderExampleLabel, { color: theme.iconInactive }]}>
+                  {t('sentenceBuilderExampleLabel')}
+                </Text>
+                <View style={styles.builderChipsRow}>
+                  {EXAMPLE_WORDS.map((ex) => (
+                    <View
+                      key={ex.word}
+                      style={[styles.builderChip, { backgroundColor: categoryColorMap[ex.category] }]}
+                    >
+                      <Text style={styles.builderChipCategory}>{t(ex.category as any)}</Text>
+                      <Text style={styles.builderChipWord}>{ex.word}</Text>
+                    </View>
+                  ))}
+                  <Icon name="chevron-forward" size={16} color={theme.iconInactive} />
+                </View>
+                <Text style={[styles.builderFormHint, { color: theme.iconInactive }]}>
+                  {t('sentenceBuilderFormHint')}
+                </Text>
+                <Text style={styles.builderExampleSentence}>
+                  {EXAMPLE_SENTENCE_PARTS.map((part, i) => (
+                    <Text key={part.text} style={{ color: categoryColorMap[part.category] }}>
+                      {part.text}{i < EXAMPLE_SENTENCE_PARTS.length - 1 ? ' ' : ''}
+                    </Text>
+                  ))}
+                </Text>
+              </View>
+            )}
           </>
         )}
 
@@ -707,10 +703,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between'
-  },
-  wordWrapper: {
-    marginBottom: 8
+    justifyContent: 'flex-start',
+    gap: 8,
   },
   inputContainer: {
     marginTop: 20,
@@ -810,6 +804,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 20,
   },
   stepTitle: {
     fontSize: 17,
@@ -820,16 +815,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 6,
   },
-  builderCard: {
-    marginTop: 20,
+  builderExampleCard: {
+    marginTop: 16,
     borderRadius: 14,
     borderWidth: 1,
     padding: 16,
-  },
-  builderDivider: {
-    height: 1,
-    marginTop: 14,
-    marginBottom: 12,
   },
   builderExampleLabel: {
     fontSize: 11,

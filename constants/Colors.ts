@@ -3,13 +3,13 @@ export const CategoryColors = {
     yellow: '#E7CF61',
     red: '#BD492C',
     purple: '#5A3B76',
-    lightpurple: '#AEA1B2',
+    lightpurple: '#C8A2C8',
     blue: '#DDC690',
     lightblue: '#90A9E4',
     pink: '#AD6F83',
     lightpink: '#DBABC1',
     green: '#4B7C6B',
-    lightgreen: '#A6E8BB'
+    lightgreen: '#9ED6AF'
 } as const;
 
 // Theme-specific colors
