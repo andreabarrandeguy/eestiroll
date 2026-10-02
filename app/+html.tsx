@@ -45,17 +45,6 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
         <ScrollViewStyleReset />
-        {/* body{overflow:hidden} from the reset above isn't enough on iOS
-            Safari: it still force-scrolls the page to bring a focused
-            TextInput "into view", which on a screen with no document
-            scroll to begin with just shoves everything up and crops
-            content above the fold. Pinning html/body with position:fixed
-            leaves Safari nothing to scroll, so the layout stays put —
-            nested scrollable regions (History list, AI feedback panel)
-            are unaffected since those scroll their own inner elements. */}
-        <style>{`
-          html, body { position: fixed; inset: 0; width: 100%; height: 100%; }
-        `}</style>
       </head>
       <body>{children}</body>
     </html>
