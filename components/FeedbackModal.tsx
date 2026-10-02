@@ -1,5 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 import { useTranslations } from '@/hooks/useTranslations';
 import { EVENTS, track } from '@/services/analytics';
 import { FeedbackSource, submitFeedback } from '@/services/feedback';
@@ -19,6 +20,7 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
   const { theme } = useTheme();
   const { language } = useLanguage();
   const { t } = useTranslations();
+  const keyboardOffset = useKeyboardOffset();
 
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -47,7 +49,15 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Pressable style={styles.backdrop} onPress={handleClose}>
+      <Pressable
+        style={[
+          styles.backdrop,
+          keyboardOffset > 0
+            ? { justifyContent: 'flex-end', paddingBottom: keyboardOffset + 16 }
+            : { justifyContent: 'center' },
+        ]}
+        onPress={handleClose}
+      >
         <Pressable style={[styles.container, { backgroundColor: theme.background, borderColor: theme.text }]} onPress={(e) => e.stopPropagation()}>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Text style={[styles.closeText, { color: theme.text }]}>✕</Text>
@@ -56,7 +66,7 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
           {status === 'success' ? (
             <>
               <Text style={[styles.title, { color: theme.text }]}>{t('feedbackThanks')}</Text>
-              <TouchableOpacity style={[styles.button, { backgroundColor: theme.yellow }]} onPress={handleClose}>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.accent }]} onPress={handleClose}>
                 <Text style={styles.buttonText}>{t('close')}</Text>
               </TouchableOpacity>
             </>
@@ -87,7 +97,7 @@ export function FeedbackModal({ visible, onDismiss, source, word, category, cont
               ) : null}
 
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: theme.blue }, (status === 'loading' || !message.trim()) && styles.buttonDisabled]}
+                style={[styles.button, { backgroundColor: theme.accent }, (status === 'loading' || !message.trim()) && styles.buttonDisabled]}
                 onPress={handleSubmit}
                 disabled={status === 'loading' || !message.trim()}
               >
@@ -109,7 +119,9 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
+    // justifyContent is overridden inline: centered at rest, anchored just
+    // above the keyboard (via useKeyboardOffset) once it's open — see the
+    // style array on the Pressable below.
     alignItems: 'center',
     padding: 20,
   },

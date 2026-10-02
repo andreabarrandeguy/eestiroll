@@ -6,7 +6,7 @@ import { Stack } from 'expo-router';
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const LAST_UPDATED = 'September 9, 2026';
+const LAST_UPDATED = 'October 2, 2026';
 const CONTACT_EMAIL = 'andreabarrandeguy@gmail.com';
 
 function Section({ title, theme, children }: { title: string; theme: Theme; children: ReactNode }) {
@@ -31,7 +31,7 @@ export default function PrivacyScreen() {
         <Section title="Overview" theme={theme}>
           EestiRoll (&quot;the app&quot;) is a small, independently-made app for practicing Estonian
           vocabulary. This page explains what information is collected, why, and how it can be
-          controlled. It applies to both the web version and the mobile apps.
+          controlled.
         </Section>
 
         <Section title="Information Collected" theme={theme}>
@@ -51,6 +51,7 @@ export default function PrivacyScreen() {
         <Section title="Who This Is Shared With" theme={theme}>
           {'• OpenAI — processes the words/sentence you submit to generate feedback. It does not receive your email or identity.\n\n'}
           {'• Supabase — stores account and subscriber data securely.\n\n'}
+          {'• Resend — sends the one-time login code and newsletter emails on our behalf.\n\n'}
           {'• PostHog — processes anonymous usage analytics.\n\n'}
           None of these services are permitted to use this data for their own purposes beyond providing the service to the app.
         </Section>

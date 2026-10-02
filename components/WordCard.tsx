@@ -1,10 +1,15 @@
 import { WordModal } from '@/components/WordModal';
+import { Fonts } from '@/constants/Fonts';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTranslations } from '@/hooks/useTranslations';
 import { fetchContent } from '@/services/api';
 import { allWords } from '@/utils/wordData';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
+
+// The native animated module doesn't exist on web — requesting it there just
+// prints a noisy fallback warning on every animation.
+const NATIVE_DRIVER = Platform.OS !== 'web';
 
 interface WordCardProps {
   word: string;
@@ -76,12 +81,12 @@ export const WordCard = React.memo(({
       Animated.timing(translateY, {
         toValue: 0,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_DRIVER,
       }),
       Animated.timing(opacity, {
         toValue: 1,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_DRIVER,
       })
     ]).start();
   }, [refreshKey]);
@@ -115,12 +120,12 @@ export const WordCard = React.memo(({
           Animated.timing(scaleAnim, {
             toValue: 1.1,
             duration: 100,
-            useNativeDriver: true,
+            useNativeDriver: NATIVE_DRIVER,
           }),
           Animated.timing(scaleAnim, {
             toValue: 1,
             duration: 100,
-            useNativeDriver: true,
+            useNativeDriver: NATIVE_DRIVER,
           })
         ]).start();
       }
@@ -208,7 +213,8 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     marginBottom: 2,
-    textAlign: 'center'
+    textAlign: 'center',
+    fontFamily: Fonts.heading,
   },
   categoryTextCompact: {
     fontSize: 10,
@@ -216,8 +222,8 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center'
+    textAlign: 'center',
+    fontFamily: Fonts.bodyBold,
   },
   cardTextCompact: {
     fontSize: 16,

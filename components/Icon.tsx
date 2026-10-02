@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, ViewStyle } from 'react-native';
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Line, Path, Rect } from 'react-native-svg';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -14,19 +14,44 @@ interface IconProps {
 
 // SVG Components for Web
 const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWidth?: number }>> = {
-  // Settings (gear)
-  'settings-outline': ({ size, color, strokeWidth = 1.5 }) => (
+  // Settings (helm wheel — a cross between a gear and a ship's wheel, for
+  // the tab bar's own identity rather than a generic Ionicons gear)
+  'settings-outline': ({ size, color, strokeWidth = 1.3 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
-      <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <Circle cx={12} cy={12} r={7.5} stroke={color} strokeWidth={strokeWidth}/>
+      <Circle cx={12} cy={12} r={2} stroke={color} strokeWidth={strokeWidth}/>
+      <Line x1={12} y1={4.5} x2={12} y2={10} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={12} y1={14} x2={12} y2={19.5} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={4.5} y1={12} x2={10} y2={12} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={14} y1={12} x2={19.5} y2={12} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={6.6} y1={6.6} x2={10.6} y2={10.6} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={13.4} y1={13.4} x2={17.4} y2={17.4} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={17.4} y1={6.6} x2={13.4} y2={10.6} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={10.6} y1={13.4} x2={6.6} y2={17.4} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Circle cx={12} cy={3.3} r={1.1} fill={color}/>
+      <Circle cx={12} cy={20.7} r={1.1} fill={color}/>
+      <Circle cx={3.3} cy={12} r={1.1} fill={color}/>
+      <Circle cx={20.7} cy={12} r={1.1} fill={color}/>
+      <Circle cx={5.9} cy={5.9} r={1.1} fill={color}/>
+      <Circle cx={18.1} cy={18.1} r={1.1} fill={color}/>
+      <Circle cx={18.1} cy={5.9} r={1.1} fill={color}/>
+      <Circle cx={5.9} cy={18.1} r={1.1} fill={color}/>
     </Svg>
   ),
 
-  // Time/History (clock)
-  'time-outline': ({ size, color, strokeWidth = 1.5 }) => (
+  // Time/History (pocket watch — loop + stem + bold face, matching the
+  // reference image rather than a generic Ionicons clock)
+  'time-outline': ({ size, color, strokeWidth = 1.3 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={strokeWidth}/>
-      <Path d="M12 6v6l4 2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <Ellipse cx={12} cy={2.3} rx={1.6} ry={2} stroke={color} strokeWidth={strokeWidth}/>
+      <Rect x={10.7} y={3.7} width={2.6} height={2.4} rx={0.6} stroke={color} strokeWidth={strokeWidth}/>
+      <Circle cx={12} cy={13} r={8} stroke={color} strokeWidth={strokeWidth}/>
+      <Line x1={12} y1={5} x2={12} y2={6.8} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={20} y1={13} x2={18.2} y2={13} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={12} y1={21} x2={12} y2={19.2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={4} y1={13} x2={5.8} y2={13} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={12} y1={13} x2={7.3} y2={8.3} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <Line x1={12} y1={13} x2={9.2} y2={17.7} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
     </Svg>
   ),
 
@@ -217,6 +242,33 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
+  // Help circle outline (how it works / tutorial)
+  'help-circle-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={strokeWidth}/>
+      <Path d="M9.5 9a2.5 2.5 0 014.9.8c0 1.7-2.4 2.2-2.4 3.7" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <Circle cx={12} cy={16.5} r={1.1} fill={color}/>
+    </Svg>
+  ),
+
+  // Star outline (bookmark — used in the "Add to Home Screen" tutorial step
+  // for the desktop case, where bookmarking is the realistic equivalent)
+  'star-outline': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3.5l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6-4.4-4.2 6-.8z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  ),
+
+  // Ellipsis vertical (Android/Chrome overflow menu — used in the "Add to
+  // Home Screen" tutorial step)
+  'ellipsis-vertical': ({ size, color }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={5} r={1.6} fill={color}/>
+      <Circle cx={12} cy={12} r={1.6} fill={color}/>
+      <Circle cx={12} cy={19} r={1.6} fill={color}/>
+    </Svg>
+  ),
+
   // Flag outline (report feedback)
   'flag-outline': ({ size, color, strokeWidth = 1.5 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -249,8 +301,13 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
   ),
 };
 
+// Custom-drawn icons with no real Ionicons equivalent (the tab bar's helm
+// wheel and pocket watch) — rendered from our own SVG on every platform,
+// not just web, since react-native-svg works natively too.
+const CUSTOM_ICON_NAMES = new Set(['settings-outline', 'time-outline']);
+
 export function Icon({ name, size, color, style }: IconProps) {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' || CUSTOM_ICON_NAMES.has(name)) {
     const SVGIcon = SVGIcons[name];
     if (SVGIcon) {
       return <SVGIcon size={size} color={color} />;
@@ -259,6 +316,6 @@ export function Icon({ name, size, color, style }: IconProps) {
     console.warn(`Icon "${name}" not found for web`);
     return null;
   }
-  
+
   return <Ionicons name={name} size={size} color={color} style={style} />;
 }

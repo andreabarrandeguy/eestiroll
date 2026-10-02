@@ -1,4 +1,5 @@
 import { Icon } from '@/components/Icon';
+import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
 import { ReactNode } from 'react';
@@ -103,7 +104,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     textAlign: 'center',
-    flex: 1
+    flex: 1,
+    fontFamily: Fonts.heading,
   },
   headerSpacer: {
     width: 40

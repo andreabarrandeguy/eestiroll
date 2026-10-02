@@ -138,7 +138,7 @@ export default function CategoriesScreen() {
                   <Icon 
                     name={isExcluded ? "close-circle" : "checkmark-circle"} 
                     size={24} 
-                    color={isExcluded ? "#E95A35" : theme.yellow} 
+                    color={isExcluded ? "#E95A35" : theme.accent}
                   />
                 </TouchableOpacity>
               </View>

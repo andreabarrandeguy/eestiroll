@@ -6,10 +6,11 @@ request apart from an anonymous one.
 
 **Signing in does not currently raise the daily quota.** Each AI check calls
 OpenAI and costs real money, so both anonymous and signed-in users share the
-same cap for now: **1/day**, down from the current 5/day. Accounts are
+same cap for now: **3/day**, down from the current 5/day. Accounts are
 expected to unlock a paid subscription for more checks later — not implemented
 yet, no need to build it now, just don't assume signing in alone raises the
-cap.
+cap. (Accounts are also hidden from the Config UI for the same reason — no
+point dangling a sign-in benefit that doesn't exist yet.)
 
 ## Don't let this change break the live web app
 
@@ -18,7 +19,7 @@ This same Django API is still serving the **current live web version**
 `Authorization` header, and isn't being touched while the mobile/accounts
 work happens on a separate branch (`mobile-launch` in this repo — see git
 history for why). If the anonymous limit just drops to 1/day server-side
-today, the live web app's users drop from 5/day to 1/day immediately too —
+today, the live web app's users drop from 5/day to 3/day immediately too —
 probably not the intent yet.
 
 **Recommendation: one backend, not two.** A second Django deployment means
@@ -123,7 +124,7 @@ no round-trip.
 - Use a **separate table (or a platform-prefixed key) from the existing web
   quota**, not the same IP-keyed rows. Otherwise someone hitting the API from
   both the web app and the mobile app on the same wifi would share one
-  counter between two different intended limits (5/day legacy vs 1/day new),
+  counter between two different intended limits (5/day legacy vs 3/day new),
   which makes neither number correct.
 - Key: `sha256("mobile:" + sub)` for signed-in, `sha256("mobile:" + ip)` for
   anonymous. Hashing keeps the quota table free of raw identifiers.
@@ -145,20 +146,20 @@ Keep the existing `remaining` field on both 200 and 429. **Add two new
 fields to both:**
 
 ```json
-{ "remaining": 0, "limit": 1, "is_authenticated": false }
+{ "remaining": 0, "limit": 3, "is_authenticated": false }
 ```
 
-The client already has a fallback if these are missing (guesses 1 either
+The client already has a fallback if these are missing (guesses 3 either
 way), so this can ship whenever — no coordinated release with the client is
-required. But without `limit`/`is_authenticated` the client can't render "1
-of 1 used" accurately, and the two sides' numbers can silently drift.
+required. But without `limit`/`is_authenticated` the client can't render "3
+of 3 used" accurately, and the two sides' numbers can silently drift.
 
 ## Open decision
 
-**The daily limit (1, same for anonymous and signed-in) is assumed
-throughout the client and this spec.** Change it here if you land on a
-different number, and update the client's `DAILY_LIMIT_FALLBACK` constant in
-`services/aiService.ts` and the `dailyLimitReachedAnon` / `dailyLimitReachedAuth`
-copy in `utils/translations.ts` (all 3 languages) to match. Once the paid
-subscription tier for more corrections is designed, this doc and those same
-spots need a second pass.
+**The daily limit is 3/day, same for anonymous and signed-in — already
+updated in the client** (`DAILY_LIMIT_FALLBACK` in `services/aiService.ts`,
+and the `aboutFeature2` copy in `utils/translations.ts`, all 3 languages).
+If this backend changes the number again, update those same spots to match.
+Once the paid subscription tier for more corrections is designed, this doc
+and those same spots need a second pass — and at that point also revisit
+whether signed-in should get a distinct (higher) limit again.

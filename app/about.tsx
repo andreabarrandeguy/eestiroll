@@ -46,7 +46,7 @@ function FeedbackListRow({
 }) {
   return (
     <Pressable style={styles.listRow} onPress={onPress}>
-      <Icon name="time-outline" size={18} color={theme.yellow} />
+      <Icon name="time-outline" size={18} color={theme.accent} />
       <Text style={[styles.listRowText, { color: theme.text }]}>{text}</Text>
       <Icon name="flag-outline" size={16} color={theme.iconInactive} />
     </Pressable>
@@ -68,7 +68,7 @@ export default function AboutScreen() {
       <ScreenContainer title={t('about')} showBackButton>
         <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
           <Image
-            source={require('@/assets/images/dice-static.png')}
+            source={require('@/assets/images/dice-static-small.png')}
             style={styles.avatar}
             resizeMode="contain"
           />
@@ -87,7 +87,7 @@ export default function AboutScreen() {
 
         <SectionLabel label={t('aboutRoadmapTitle')} theme={theme} />
         <View style={[styles.listGroup, { backgroundColor: theme.cardBackground }]}>
-          <ListRow icon="time-outline" iconColor={theme.yellow} text={t('aboutRoadmap1')} theme={theme} />
+          <ListRow icon="time-outline" iconColor={theme.accent} text={t('aboutRoadmap1')} theme={theme} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <FeedbackListRow text={t('aboutRoadmap2')} theme={theme} onPress={() => setFeedbackVisible(true)} />
         </View>
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    width: 64,
-    height: 64,
+    width: 53,
+    height: 53,
     borderRadius: 16,
     marginBottom: 16,
   },

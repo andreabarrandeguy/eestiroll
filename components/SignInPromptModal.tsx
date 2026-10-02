@@ -36,7 +36,7 @@ export function SignInPromptModal({ visible, onDismiss, onSignIn }: SignInPrompt
           <Text style={[styles.title, { color: theme.text }]}>{t('signInPromptTitle')}</Text>
           <Text style={[styles.subtitle, { color: theme.text }]}>{t('signInPromptBody')}</Text>
 
-          <TouchableOpacity style={[styles.button, { backgroundColor: theme.blue }]} onPress={handleSignIn}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: theme.accent }]} onPress={handleSignIn}>
             <Text style={styles.buttonText}>{t('continueWithEmail')}</Text>
           </TouchableOpacity>
 

@@ -138,12 +138,12 @@ export default function AccountScreen() {
 
   const renderSignedIn = () => (
     <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-      <Icon name="person-circle-outline" size={48} color={theme.blue} />
+      <Icon name="person-circle-outline" size={48} color={theme.accent} />
       <Text style={[styles.signedInLabel, { color: theme.iconInactive }]}>{t('signedInAs')}</Text>
       <Text style={[styles.signedInEmail, { color: theme.text }]}>{sessionEmail}</Text>
-      <View style={[styles.benefitPill, { backgroundColor: theme.blue + '20' }]}>
-        <Icon name="checkmark-circle" size={16} color={theme.blue} />
-        <Text style={[styles.benefitText, { color: theme.blue }]}>{t('signInBenefit')}</Text>
+      <View style={[styles.benefitPill, { backgroundColor: theme.accent + '20' }]}>
+        <Icon name="checkmark-circle" size={16} color={theme.accent} />
+        <Text style={[styles.benefitText, { color: theme.accent }]}>{t('signInBenefit')}</Text>
       </View>
 
       <TouchableOpacity style={[styles.secondaryButton, { borderColor: theme.border }]} onPress={handleSignOut}>
@@ -187,7 +187,7 @@ export default function AccountScreen() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: theme.blue }, loading && styles.disabled]}
+        style={[styles.primaryButton, { backgroundColor: theme.accent }, loading && styles.disabled]}
         onPress={handleSendCode}
         disabled={loading}
       >
@@ -220,7 +220,7 @@ export default function AccountScreen() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: theme.blue }, loading && styles.disabled]}
+        style={[styles.primaryButton, { backgroundColor: theme.accent }, loading && styles.disabled]}
         onPress={() => handleVerifyCode()}
         disabled={loading}
       >
@@ -232,7 +232,7 @@ export default function AccountScreen() {
           <Text style={[styles.linkText, { color: theme.iconInactive }]}>{t('changeEmail')}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSendCode} disabled={loading || resendSeconds > 0}>
-          <Text style={[styles.linkText, { color: resendSeconds > 0 ? theme.iconInactive : theme.blue }]}>
+          <Text style={[styles.linkText, { color: resendSeconds > 0 ? theme.iconInactive : theme.accent }]}>
             {resendSeconds > 0 ? t('resendIn').replace('{seconds}', String(resendSeconds)) : t('resendCode')}
           </Text>
         </TouchableOpacity>

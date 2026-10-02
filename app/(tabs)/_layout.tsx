@@ -1,20 +1,26 @@
+import { HowItWorksModal } from '@/components/HowItWorksModal';
 import { Icon } from '@/components/Icon';
+import { Fonts } from '@/constants/Fonts';
 import { useRandom } from '@/contexts/RandomContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslations } from '@/hooks/useTranslations';
 import { EVENTS, track } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const router = useRouter();
+  const pathname = usePathname();
   const { triggerRandom, randomTrigger } = useRandom();
   const { theme, isDark } = useTheme();
+  const { t } = useTranslations();
   const insets = useSafeAreaInsets();
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [howItWorksVisible, setHowItWorksVisible] = useState(false);
 
   // Before the first roll, gently wiggle the dice every couple seconds to
   // draw attention to it as the button to press.
@@ -40,7 +46,18 @@ export default function TabLayout() {
     };
   }, [randomTrigger, shakeAnim]);
 
+  // Pressing the dice tab button does double duty as a tab and as the "roll"
+  // action. If the dice tab isn't focused yet, this press is just navigation
+  // back to it — don't roll new words and wipe whatever the user had going.
+  // Only an actual press while already on that screen should roll. Checked
+  // via usePathname() (re-read fresh on every render) rather than a focus
+  // prop from the tab bar, since that prop is captured once and goes stale.
   const handleDicePress = () => {
+    if (pathname !== '/') {
+      router.push('/');
+      return;
+    }
+
     idleLoopRef.current?.stop();
     track(EVENTS.ROLL, { source: 'tab_button' });
     Animated.sequence([
@@ -66,7 +83,6 @@ export default function TabLayout() {
       }),
     ]).start();
 
-    router.push('/(tabs)');
     triggerRandom();
   };
 
@@ -82,7 +98,7 @@ export default function TabLayout() {
       }}
     >
       <Image 
-        source={require('@/assets/images/dice-static.png')}
+        source={require('@/assets/images/dice-static-small.png')}
         style={styles.diceImage}
         resizeMode="contain"
       />
@@ -93,10 +109,10 @@ export default function TabLayout() {
     if (Platform.OS === 'web') {
       return (
         <View style={styles.webIconContainer}>
-          <Icon 
+          <Icon
             name={name}
             size={32}
-            color={focused ? theme.yellow : theme.text}
+            color={focused ? theme.accent : theme.text}
           />
         </View>
       );
@@ -109,21 +125,28 @@ export default function TabLayout() {
         style={styles.blurContainer}
       >
         <View style={styles.iconContainer}>
-          <Icon 
+          <Icon
             name={name}
             size={40}
-            color={focused ? theme.yellow : theme.text}
+            color={focused ? theme.accent : theme.text}
           />
         </View>
       </BlurView>
     );
   };
 
+  // Shown only on the dice tab, before the first roll — same condition
+  // HomeScreen uses for its own pre-roll hint (randomTrigger stays 0 in
+  // lockstep with useRandomWords' refreshKey, since both only advance off
+  // the same triggerRandom() call).
+  const showHowItWorksLink = pathname === '/' && randomTrigger === 0;
+
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       sceneContainerStyle={{ backgroundColor: theme.background }}
       screenOptions={{
-        tabBarActiveTintColor: theme.yellow,
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.text,
         tabBarStyle: {
           position: 'absolute',
@@ -131,9 +154,14 @@ export default function TabLayout() {
           borderTopWidth: 0,
           paddingBottom: Platform.OS === 'web' ? 90 : 90 + insets.bottom,
           elevation: 0,
-          shadowOpacity: 0,
-          shadowOffset: { width: 0, height: 0 },
-          shadowRadius: 0,
+          boxShadow: 'none',
+          // The bar's own box is mostly transparent padding around the three
+          // small icons, but by default it still captures every touch that
+          // lands anywhere inside its (large) bounding box — including
+          // scroll/swipe gestures meant for content underneath, like the
+          // tail end of a long AI feedback response. 'box-none' lets empty
+          // space pass touches through while the icon buttons stay tappable.
+          pointerEvents: 'box-none',
           ...(Platform.OS === 'web' && {
             maxWidth: 500,
             width: '100%',
@@ -165,7 +193,7 @@ export default function TabLayout() {
                 title: '',
                 tabBarButton: () => (
                   <View style={styles.diceWrapperWeb}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={handleDicePress}
                       activeOpacity={0.7}
                       style={styles.diceButtonWeb}
@@ -196,6 +224,21 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+
+      {showHowItWorksLink && (
+        <TouchableOpacity
+          onPress={() => { track(EVENTS.HOW_IT_WORKS_OPENED); setHowItWorksVisible(true); }}
+          style={[styles.howItWorksLinkBelowDice, { bottom: Platform.OS === 'web' ? 2 : insets.bottom + 2 }]}
+        >
+          <Text style={[styles.howItWorksLinkText, { color: theme.iconInactive }]}>{t('howItWorksLink')}</Text>
+        </TouchableOpacity>
+      )}
+
+      <HowItWorksModal
+        visible={howItWorksVisible}
+        onDismiss={() => setHowItWorksVisible(false)}
+      />
+    </View>
   );
 }
 
@@ -239,14 +282,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 35,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    // Android renders `elevation` as an opaque box unless the view has an
+    // explicit (transparent) background — without this it shows up as a
+    // plain white square behind the dice.
+    backgroundColor: 'transparent',
+    boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.3)',
     elevation: 8,
   },
   diceImage: {
-    width: 100, 
-    height: 100,
+    width: 83,
+    height: 83,
+  },
+  // Rendered as a sibling after <Tabs>, not inside it — the tab bar's own
+  // (invisible) view swallows touches anywhere within its box, including
+  // its bottom padding, so a link placed underneath it via HomeScreen was
+  // never actually clickable there.
+  howItWorksLinkBelowDice: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    padding: 8,
+  },
+  howItWorksLinkText: {
+    fontSize: 13,
+    textDecorationLine: 'underline',
+    fontFamily: Fonts.bodyRegular,
   },
 });

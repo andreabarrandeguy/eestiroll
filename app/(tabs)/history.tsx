@@ -2,6 +2,7 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { getAllWordTranslations, getWordTranslation } from '@/components/WordCard';
 import { WordModal } from '@/components/WordModal';
+import { Fonts } from '@/constants/Fonts';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -25,6 +26,10 @@ const getScoreColor = (score: number) => {
   return '#E95A35';
 };
 
+// The native animated module doesn't exist on web — requesting it there just
+// prints a noisy fallback warning on every animation.
+const NATIVE_DRIVER = Platform.OS !== 'web';
+
 const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
   const [opacity] = useState(() => new Animated.Value(0.3));
 
@@ -35,13 +40,13 @@ const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
           toValue: 0.7,
           duration: 800,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(opacity, {
           toValue: 0.3,
           duration: 800,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ])
     );
@@ -254,7 +259,7 @@ export default function HistoryScreen() {
                               <Icon
                                 name={selectedEntries.includes(entry.timestamp) ? "checkbox" : "square-outline"}
                                 size={22}
-                                color={selectedEntries.includes(entry.timestamp) ? theme.yellow : theme.iconInactive}
+                                color={selectedEntries.includes(entry.timestamp) ? theme.accent : theme.iconInactive}
                               />
                             </TouchableOpacity>
                           )}
@@ -384,7 +389,7 @@ export default function HistoryScreen() {
                                   <Icon name="close" size={20} color={theme.iconInactive} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={handleSaveNote} style={styles.noteEditButton}>
-                                  <Icon name="checkmark" size={20} color={theme.yellow} />
+                                  <Icon name="checkmark" size={20} color={theme.accent} />
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -453,7 +458,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   contentWrapper: { flex: 1, maxWidth: 500, width: '100%', alignSelf: 'center' },
   fixedHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 16 },
+  title: { fontSize: 24, textAlign: 'center', marginBottom: 16, fontFamily: Fonts.heading },
   selectionBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   selectionButton: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   selectionButtonText: { fontSize: 14 },

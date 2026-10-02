@@ -21,6 +21,11 @@ export const DarkTheme = {
     inputText: '#0A0A0A',
     border: '#2a2a2a',
     iconInactive: '#666',
+    // UI accent (buttons, active tab, progress bar) — same blue as the
+    // hand-drawn arrow on the empty-state screen, kept separate from
+    // CategoryColors.yellow so the PLACE/NOUN word-card color isn't affected.
+    accent: '#35529D',
+    accentText: '#FFFFFF',
     ...CategoryColors
 } as const;
 
@@ -32,6 +37,8 @@ export const LightTheme = {
     inputText: '#0A0A0A',
     border: '#E0E0E0',
     iconInactive: '#999',
+    accent: '#35529D',
+    accentText: '#FFFFFF',
     ...CategoryColors
 } as const;
 

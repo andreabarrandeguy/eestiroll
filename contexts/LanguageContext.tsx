@@ -68,7 +68,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const currentLanguageOption = availableLanguages.find(l => l.code === language) || availableLanguages[0];
+  // availableLanguages starts empty and only fills in once loadContent()'s
+  // fetch resolves — on a fresh/cold load (e.g. a backgrounded tab reloaded
+  // by the OS) a screen can render before that happens. Falling back to the
+  // hardcoded AVAILABLE_LANGUAGES list (instead of availableLanguages[0],
+  // which is undefined on an empty array) keeps this always defined so
+  // consumers like config.tsx reading `.nativeName` directly don't crash.
+  const currentLanguageOption =
+    availableLanguages.find(l => l.code === language) ||
+    availableLanguages[0] ||
+    AVAILABLE_LANGUAGES.find(l => l.code === language) ||
+    AVAILABLE_LANGUAGES[0];
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, currentLanguageOption, isLoading }}>

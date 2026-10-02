@@ -1,8 +1,8 @@
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { HowItWorksModal } from '@/components/HowItWorksModal';
 import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-const APP_SHARE_URL = 'https://andreabarrandeguy.github.io/eestiroll/';
+const APP_SHARE_URL = 'https://eestiroll.ee/';
 
 function SettingRow({
   icon,
@@ -57,12 +57,8 @@ export default function ConfigScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { currentLanguageOption } = useLanguage();
   const { t } = useTranslations();
-  const { status, email } = useAuth();
   const [feedbackVisible, setFeedbackVisible] = useState(false);
-
-  const handleAccountPress = () => {
-    router.push('/account');
-  };
+  const [howItWorksVisible, setHowItWorksVisible] = useState(false);
 
   const handleCategoriesPress = () => {
     router.push('/categories');
@@ -101,29 +97,13 @@ export default function ConfigScreen() {
 
   return (
     <ScreenContainer title={t('configuration')}>
-      <SectionLabel label={t('account')} theme={theme} first />
-      <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
-        <SettingRow
-          icon="person-circle-outline"
-          label={t('account')}
-          onPress={handleAccountPress}
-          theme={theme}
-          rightComponent={
-            <View style={[styles.settingRight, styles.settingRightShrink]}>
-              <Text
-                style={[styles.settingValue, { color: theme.iconInactive }]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {status === 'authenticated' ? email : t('signIn')}
-              </Text>
-              <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
-            </View>
-          }
-        />
-      </View>
-
-      <SectionLabel label={t('sectionApp')} theme={theme} />
+      {/* Account hidden for the web-only release — there's no real benefit
+          to signing in yet (quota is the same for everyone), and dangling
+          a benefit just to remove it later would feel worse than not
+          mentioning accounts at all. Route and screen still exist underneath,
+          just not linked from here. Re-add this section once accounts
+          actually do something (see Fase 6 in the plan). */}
+      <SectionLabel label={t('sectionApp')} theme={theme} first />
       <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
         <SettingRow
           icon="grid-outline"
@@ -196,6 +176,18 @@ export default function ConfigScreen() {
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         <SettingRow
+          icon="help-circle-outline"
+          label={t('howItWorksLink')}
+          onPress={() => { track(EVENTS.HOW_IT_WORKS_OPENED, { source: 'config' }); setHowItWorksVisible(true); }}
+          theme={theme}
+          rightComponent={
+            <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+          }
+        />
+
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        <SettingRow
           icon="information-circle-outline"
           label={t('about')}
           onPress={handleAboutPress}
@@ -212,6 +204,10 @@ export default function ConfigScreen() {
         visible={feedbackVisible}
         onDismiss={() => setFeedbackVisible(false)}
         source="config"
+      />
+      <HowItWorksModal
+        visible={howItWorksVisible}
+        onDismiss={() => setHowItWorksVisible(false)}
       />
     </ScreenContainer>
   );

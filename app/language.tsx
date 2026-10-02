@@ -38,7 +38,7 @@ export default function LanguageScreen() {
                   </Text>
                 </View>
                 {language === lang.code && (
-                  <Icon name="checkmark" size={24} color={theme.yellow} />
+                  <Icon name="checkmark" size={24} color={theme.accent} />
                 )}
               </TouchableOpacity>
               {index < AVAILABLE_LANGUAGES.length - 1 && (
