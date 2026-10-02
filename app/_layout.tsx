@@ -75,6 +75,31 @@ function AnalyticsInitializer() {
   return null;
 }
 
+// html/body are pinned with position:fixed (see app/+html.tsx) so the
+// document itself can't scroll — but iOS WebKit still pans the *visual
+// viewport* (a separate concept from the layout viewport position:fixed
+// is relative to) to bring a focused input into view, which is what was
+// cropping content above the fold when a TextInput got focused.
+// visualViewport.offsetTop is exactly that pan amount, so counteracting
+// it with an equal-and-opposite translateY on the body cancels it out.
+function ViewportPinFix() {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const counteract = () => {
+      document.body.style.transform = vv.offsetTop ? `translateY(${-vv.offsetTop}px)` : '';
+    };
+    vv.addEventListener('resize', counteract);
+    vv.addEventListener('scroll', counteract);
+    return () => {
+      vv.removeEventListener('resize', counteract);
+      vv.removeEventListener('scroll', counteract);
+      document.body.style.transform = '';
+    };
+  }, []);
+  return null;
+}
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +188,7 @@ export default function RootLayout() {
   const appContent = (
     <>
       {pageTitle}
+      <ViewportPinFix />
       <ThemeProvider>
       <AuthProvider>
       <LanguageProvider>
