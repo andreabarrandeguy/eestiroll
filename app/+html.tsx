@@ -1,16 +1,9 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import { type PropsWithChildren } from 'react';
 
-const APP_URL = 'https://andreabarrandeguy.github.io/eestiroll/';
+const APP_URL = 'https://eestiroll.ee/';
 const OG_IMAGE_URL = `${APP_URL}og-image.png`;
 const DESCRIPTION = 'Learn Estonian, one roll at a time. Practice vocabulary and get AI feedback on your sentences.';
-
-// The exported build is deployed under a /eestiroll subpath (GitHub Pages),
-// so static files (manifest.json, apple-touch-icon.png) need that prefix —
-// but the local dev server serves everything from its own root instead, so
-// the same hardcoded prefix 404s there. process.env.NODE_ENV tracks which
-// one we're in the same way Expo's own asset pipeline already does.
-const BASE_PATH = process.env.NODE_ENV === 'production' ? '/eestiroll' : '';
 
 // Root HTML for the static web export. Without this, Expo Router ships an
 // empty <title> and no Open Graph tags, so share-sheet/link previews (iMessage,
@@ -44,14 +37,25 @@ export default function Root({ children }: PropsWithChildren) {
 
         {/* Lets "Add to Home Screen" install as a standalone app with the
             real dice icon instead of a page screenshot + browser chrome. */}
-        <link rel="manifest" href={`${BASE_PATH}/manifest.json`} />
-        <link rel="apple-touch-icon" href={`${BASE_PATH}/apple-touch-icon.png`} />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="theme-color" content="#35529D" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="EestiRoll" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
         <ScrollViewStyleReset />
+        {/* body{overflow:hidden} from the reset above isn't enough on iOS
+            Safari: it still force-scrolls the page to bring a focused
+            TextInput "into view", which on a screen with no document
+            scroll to begin with just shoves everything up and crops
+            content above the fold. Pinning html/body with position:fixed
+            leaves Safari nothing to scroll, so the layout stays put —
+            nested scrollable regions (History list, AI feedback panel)
+            are unaffected since those scroll their own inner elements. */}
+        <style>{`
+          html, body { position: fixed; inset: 0; width: 100%; height: 100%; }
+        `}</style>
       </head>
       <body>{children}</body>
     </html>
