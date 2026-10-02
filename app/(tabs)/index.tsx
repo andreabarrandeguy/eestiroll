@@ -238,6 +238,8 @@ export default function HomeScreen() {
   const signInPromptModal = useSignInPromptModal();
   const { signOut } = useAuth();
   const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
+  const inputBoxRef = useRef<View>(null);
+  const [keyboardLift, setKeyboardLift] = useState(0);
 
   const use3Columns = words.length >= 5;
 
@@ -258,6 +260,47 @@ export default function HomeScreen() {
   useEffect(() => {
     wasSentenceEmptyRef.current = true;
   }, [refreshKey]);
+
+  // Safety net for short screens. The root is pinned to the visible viewport
+  // (hooks/useViewportPin.ts) so the page never jumps, but that also means
+  // there's no scroll to fall back on: on a small phone — or once the box has
+  // grown to its 3-line max — the input could end up under the keyboard with
+  // no way to reach it. So measure it, and if it really is below the fold,
+  // lift the content by exactly the shortfall and nothing more. On a screen
+  // where it already fits this stays 0 and nothing moves at all.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !inputFocused) {
+      setKeyboardLift(0);
+      return;
+    }
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+
+    const MARGIN = 12;
+    const measure = () => {
+      const node = inputBoxRef.current as unknown as HTMLElement | null;
+      if (!node) return;
+      // getBoundingClientRect is in layout viewport coordinates, which is what
+      // #root's `top` is relative to — so this already accounts for both the
+      // pin and whatever lift is currently applied, and the correction below
+      // converges in one step.
+      const rect = node.getBoundingClientRect();
+      const shortfall = rect.bottom + MARGIN - (vv.offsetTop + vv.height);
+      setKeyboardLift((prev) => {
+        const next = Math.max(0, prev + shortfall);
+        return Math.abs(next - prev) < 1 ? prev : next;
+      });
+    };
+
+    const frame = requestAnimationFrame(measure);
+    vv.addEventListener('resize', measure);
+    vv.addEventListener('scroll', measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      vv.removeEventListener('resize', measure);
+      vv.removeEventListener('scroll', measure);
+    };
+  }, [inputFocused, webInputHeight, sentence]);
 
   // On web, the box height is driven by the last-measured content size (see
   // onContentSizeChange below), which only ever grows — a textarea's
@@ -375,7 +418,7 @@ export default function HomeScreen() {
   };
 
   const content = (
-    <View style={styles.contentWrapper}>
+    <View style={[styles.contentWrapper, keyboardLift > 0 && { transform: [{ translateY: -keyboardLift }] }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>
           EestiR
@@ -450,7 +493,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <View style={[
+            <View ref={inputBoxRef} style={[
               styles.inputContainer,
               {
                 backgroundColor: theme.inputBackground,

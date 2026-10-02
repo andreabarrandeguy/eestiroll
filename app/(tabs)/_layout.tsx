@@ -3,6 +3,7 @@ import { Icon } from '@/components/Icon';
 import { Fonts } from '@/constants/Fonts';
 import { useRandom } from '@/contexts/RandomContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 import { useTranslations } from '@/hooks/useTranslations';
 import { EVENTS, track } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
@@ -18,6 +19,7 @@ export default function TabLayout() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslations();
   const insets = useSafeAreaInsets();
+  const keyboardOffset = useKeyboardOffset();
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
@@ -169,6 +171,11 @@ export default function TabLayout() {
             left: 0,
             right: 0,
             marginHorizontal: 'auto',
+            // The root is pinned to the visible viewport (see
+            // hooks/useViewportPin.ts), so with the keyboard up this bar would
+            // otherwise ride right on top of it, squeezed against the sentence
+            // input. Native apps hide the tab bar while typing; do the same.
+            ...(keyboardOffset > 0 && { display: 'none' }),
           }),
         },
         headerStyle: {

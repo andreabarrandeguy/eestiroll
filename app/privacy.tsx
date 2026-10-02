@@ -6,7 +6,7 @@ import { Stack } from 'expo-router';
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const LAST_UPDATED = 'October 2, 2026';
+const LAST_UPDATED = 'October 3, 2026';
 const CONTACT_EMAIL = 'andreabarrandeguy@gmail.com';
 
 function Section({ title, theme, children }: { title: string; theme: Theme; children: ReactNode }) {
@@ -38,6 +38,7 @@ export default function PrivacyScreen() {
           {'• Account information: if you choose to sign in, your email address is used to send a one-time login code and identify your account. The app works fully without an account.\n\n'}
           {'• Practice content: the words and sentences you submit to get AI feedback are sent to the app’s server and, from there, to OpenAI to generate a correction. Feedback saved to your local history stays on your device.\n\n'}
           {'• Usage data: PostHog is used to understand how the app is used (e.g. which screens are opened, how often people practice) so it can be improved. This is tied to an anonymous device ID, not your name or email. Precise or IP-based location is not collected.\n\n'}
+          {'• Rate limiting: your IP address is stored on the app’s server to count how many of the free daily AI checks have been used. It is not used to identify you, to determine your location, or for any other purpose.\n\n'}
           {'• Newsletter: if you subscribe to updates, the email address you provide is stored for that purpose only.'}
         </Section>
 

@@ -14,6 +14,20 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+
+        {/* GitHub Pages serves the custom domain over plain http as well as
+            https, without redirecting. The two are different origins, and only
+            https://eestiroll.ee is in the backend's CORS allowlist — so anyone
+            who reached the app over http (a saved http:// URL in the browser's
+            history is enough) had every AI check die at the preflight: the
+            POST never left the browser and the app could only report a generic
+            network error. Hop to https before the bundle loads. Scoped to the
+            production host so http dev servers aren't affected. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(location.protocol==='http:'&&location.hostname==='eestiroll.ee'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}`,
+          }}
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
         {/* Actual <title> is set per-route via expo-router/head in app/_layout.tsx */}
@@ -45,6 +59,30 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
         <ScrollViewStyleReset />
+
+        {/* iOS Safari doesn't scroll the page when an input is focused — the
+            document can't scroll at all (the reset above sets
+            body{overflow:hidden}), so WebKit pans the *visual viewport*
+            instead, far enough to center the focused element even when it was
+            already visible. That pan is what used to shove the title and the
+            word cards off the top of the screen. It can't be cancelled, so
+            instead the app root is pinned to the visible band: these two vars
+            are driven from visualViewport by hooks/useViewportPin.ts, and
+            because the screen's content is top-anchored, resizing the root
+            moves nothing — the page stays put and the keyboard just covers
+            the bottom. The defaults keep the static export correct until the
+            hook mounts. */}
+        <style>{`
+          :root { --app-height: 100%; --app-top: 0px; }
+          html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+          #root {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            top: var(--app-top);
+            height: var(--app-height);
+          }
+        `}</style>
       </head>
       <body>{children}</body>
     </html>

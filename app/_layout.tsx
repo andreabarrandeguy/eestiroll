@@ -25,6 +25,7 @@ import { Fonts } from '@/constants/Fonts';
 import { ThemeMode } from '@/constants/Colors';
 import { setPostHogInstance } from '@/services/analytics';
 import { StorageService } from '@/services/storage';
+import { useViewportPin } from '@/hooks/useViewportPin';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Image, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
@@ -77,6 +78,10 @@ function AnalyticsInitializer() {
 
 
 export default function RootLayout() {
+  // Called before the boot/error early returns below so the app root stays
+  // pinned to the visible viewport on the loading screen too.
+  useViewportPin();
+
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedThemeMode, setSavedThemeMode] = useState<ThemeMode | null>(null);
