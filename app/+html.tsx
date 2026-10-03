@@ -2,7 +2,12 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 import { type PropsWithChildren } from 'react';
 
 const APP_URL = 'https://eestiroll.ee/';
-const OG_IMAGE_URL = `${APP_URL}og-image.png`;
+// Versioned filename on purpose: Facebook (and WhatsApp, LinkedIn, iMessage)
+// cache the preview image by URL, separately from the page's metadata, so
+// re-scraping the page keeps serving the old picture. Bumping the name is
+// the only invalidation that works everywhere — including the clients that
+// offer no debugger at all. Bump it whenever the image changes.
+const OG_IMAGE_URL = `${APP_URL}og-image-v2.png`;
 const DESCRIPTION = 'Learn Estonian, one roll at a time. Practice vocabulary and get AI feedback on your sentences.';
 
 // Root HTML for the static web export. Without this, Expo Router ships an
