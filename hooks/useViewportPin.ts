@@ -36,8 +36,11 @@ export function useViewportPin() {
         reset();
         return;
       }
+      // Height only. Following offsetTop as well is what used to leave #root
+      // offset from the visible band for a frame — the white flash — and it is
+      // no longer needed now that the screen scrolls: the browser reveals the
+      // input by scrolling that container, so it has no reason to pan.
       root.style.setProperty('--app-height', `${vv.height}px`);
-      root.style.setProperty('--app-top', `${vv.offsetTop}px`);
       // Safari is also known to scroll an overflow:hidden document on focus.
       if (window.scrollY !== 0) window.scrollTo(0, 0);
     };

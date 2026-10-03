@@ -1,6 +1,7 @@
 import { DarkTheme, LightTheme, Theme, ThemeMode } from '@/constants/Colors';
 import { StorageService } from '@/services/storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 interface ThemeContextType {
   theme: Theme;
@@ -48,6 +49,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const theme = themeMode === 'dark' ? DarkTheme : LightTheme;
   const isDark = themeMode === 'dark';
+
+  // app/+html.tsx can only hardcode a default; this keeps the document ground
+  // on the theme in use, which is what shows through for the one frame that
+  // #root is offset from the visible band while the keyboard animates.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    document.documentElement.style.backgroundColor = theme.background;
+    document.body.style.backgroundColor = theme.background;
+  }, [theme.background]);
 
   return (
     <ThemeContext.Provider value={{ theme, themeMode, toggleTheme, isDark, isLoading }}>

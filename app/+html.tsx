@@ -80,6 +80,18 @@ export default function Root({ children }: PropsWithChildren) {
         <style>{`
           :root { --app-height: 100%; --app-top: 0px; }
           html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+          /* Measured on device: when the keyboard opens, WebKit pans the visual
+             viewport and then undoes it, and each of those two moves is reported
+             to JS one frame after it has already been painted. For that frame
+             #root sits offset from the visible band, and whatever it leaves
+             uncovered is painted by the document, not the app. Unpainted that was
+             a white flash; painted, it is a same-colour shift nobody notices.
+             Dark is the right default: ThemeProvider starts on dark and syncs the
+             real theme once storage has loaded. */
+          html, body { background-color: #0A0A0A; }
+          @media (prefers-color-scheme: light) {
+            html, body { background-color: #F2F2F2; }
+          }
           #root {
             position: fixed;
             left: 0;
