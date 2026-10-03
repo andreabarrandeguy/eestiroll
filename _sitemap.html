@@ -1,6 +1,18 @@
 <!DOCTYPE html><html  lang="en"><head><title data-rh="true"></title><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="description" content="Learn Estonian, one roll at a time. Practice vocabulary and get AI feedback on your sentences."/><meta property="og:title" content="EestiRoll"/><meta property="og:description" content="Learn Estonian, one roll at a time. Practice vocabulary and get AI feedback on your sentences."/><meta property="og:image" content="https://eestiroll.ee/og-image-v2.png"/><meta property="og:image:width" content="2400"/><meta property="og:image:height" content="1260"/><meta property="og:image:type" content="image/png"/><meta property="og:url" content="https://eestiroll.ee/"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="EestiRoll"/><meta name="twitter:description" content="Learn Estonian, one roll at a time. Practice vocabulary and get AI feedback on your sentences."/><meta name="twitter:image" content="https://eestiroll.ee/og-image-v2.png"/><link rel="manifest" href="/manifest.json"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/><meta name="theme-color" content="#35529D"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-title" content="EestiRoll"/><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/><script>if(location.protocol==='http:'&&location.hostname==='eestiroll.ee'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}</script><style id="expo-reset">#root,body,html{height:100%}body{overflow:hidden}#root{display:flex}</style><style>
           :root { --app-height: 100%; --app-top: 0px; }
           html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+          /* Measured on device: when the keyboard opens, WebKit pans the visual
+             viewport and then undoes it, and each of those two moves is reported
+             to JS one frame after it has already been painted. For that frame
+             #root sits offset from the visible band, and whatever it leaves
+             uncovered is painted by the document, not the app. Unpainted that was
+             a white flash; painted, it is a same-colour shift nobody notices.
+             Dark is the right default: ThemeProvider starts on dark and syncs the
+             real theme once storage has loaded. */
+          html, body { background-color: #0A0A0A; }
+          @media (prefers-color-scheme: light) {
+            html, body { background-color: #F2F2F2; }
+          }
           #root {
             position: fixed;
             left: 0;
@@ -461,5 +473,5 @@ input::-webkit-search-cancel-button,input::-webkit-search-decoration,input::-web
 @keyframes r-1pzkwqh{0%{transform:translateY(100%);}100%{transform:translateY(0%);}}
 @keyframes r-imtty0{0%{opacity:0;}100%{opacity:1;}}
 @keyframes r-q67da2{0%{transform:translateX(-100%);}100%{transform:translateX(400%);}}
-@keyframes r-t2lo5v{0%{opacity:1;}100%{opacity:0;}}</style><link rel="icon" href="/favicon.ico"/><script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script></head><body><div id="root"><div class="css-g5y9jx r-13awgt0"></div></div><script src="/_expo/static/js/web/entry-4033a8125d9fc6e9728622cb0301119e.js" defer></script>
+@keyframes r-t2lo5v{0%{opacity:1;}100%{opacity:0;}}</style><link rel="icon" href="/favicon.ico"/><script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script></head><body><div id="root"><div class="css-g5y9jx r-13awgt0"></div></div><script src="/_expo/static/js/web/entry-359ac0fce24500828cc836e15d84e104.js" defer></script>
 </body></html>
