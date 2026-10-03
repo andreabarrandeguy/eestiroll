@@ -628,7 +628,7 @@ export default function HomeScreen() {
   const content = (
     <View style={styles.contentWrapper}>
       {showingFeedback ? (
-        <View style={styles.content}>{inner}</View>
+        <View style={styles.contentFixed}>{inner}</View>
       ) : (
         <ScrollView
           style={styles.contentScroll}
@@ -700,8 +700,18 @@ const styles = StyleSheet.create({
   contentScroll: {
     flex: 1,
   },
+  // Scroll content container: must grow with the content, so flexBasis stays
+  // auto. `flex: 1` here would pin it to the viewport and defeat the scroll.
   content: {
     flexGrow: 1,
+    padding: 20,
+    paddingBottom: 120
+  },
+  // Feedback view: the opposite requirement. Its height has to be capped at the
+  // parent's so the ScrollView nested inside it has somewhere to scroll — with
+  // flexBasis auto it would stretch to fit the whole response instead.
+  contentFixed: {
+    flex: 1,
     padding: 20,
     paddingBottom: 120
   },
