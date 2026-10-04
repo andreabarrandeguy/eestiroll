@@ -10,6 +10,7 @@ import { Fonts } from '@/constants/Fonts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useRandom } from '@/contexts/RandomContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
 import { useSignInPromptModal } from '@/hooks/useSignInPromptModal';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
@@ -219,6 +220,7 @@ export default function HomeScreen() {
     sentence, 
     setSentence, 
   } = useRandomWords();
+  const { triggerRandom, setFeedbackOpen } = useRandom();
 
   const [cursorPosition, setCursorPosition] = useState(0);
   const [webInputHeight, setWebInputHeight] = useState(BASE_INPUT_HEIGHT);
@@ -252,6 +254,17 @@ export default function HomeScreen() {
     setAiError(false);
     setWebInputHeight(BASE_INPUT_HEIGHT);
   }
+
+  // The tab bar is rendered by the layout, which can't see this screen's state,
+  // so the flag is mirrored into the shared context. An effect rather than a
+  // call inside runAICheck because the refreshKey reset above clears this
+  // during render, where writing another component's state isn't allowed.
+  useEffect(() => {
+    setFeedbackOpen(showingFeedback);
+  }, [showingFeedback, setFeedbackOpen]);
+
+  // Leaving the screen must not strand the bar hidden.
+  useEffect(() => () => setFeedbackOpen(false), [setFeedbackOpen]);
 
   // Refs can't be written during render (unlike state) — this piece of the
   // same reset stays in an effect.
@@ -619,6 +632,21 @@ export default function HomeScreen() {
                   <SkeletonLine width="80%" />
                 </>
               )}
+
+              {/* The dice in the tab bar does roll again, but nothing says so
+                  from in here. Spell it out at the end of the answer, where
+                  someone who has finished reading is looking anyway. */}
+              {(aiResult || aiRemaining === 0) && (
+                <TouchableOpacity
+                  onPress={() => triggerRandom()}
+                  style={[styles.continueButton, { backgroundColor: theme.accent }]}
+                >
+                  <Icon name="refresh-outline" size={16} color={theme.accentText} />
+                  <Text style={[styles.continueButtonText, { color: theme.accentText }]}>
+                    {t('continueLearning')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           </View>
         )}
@@ -710,10 +738,14 @@ const styles = StyleSheet.create({
   // Feedback view: the opposite requirement. Its height has to be capped at the
   // parent's so the ScrollView nested inside it has somewhere to scroll — with
   // flexBasis auto it would stretch to fit the whole response instead.
+  // No bottom padding at all: this is the scroller's frame, and anything here
+  // is dead margin the content can never scroll through — it clipped the
+  // continue button at the end of a long answer. The breathing room belongs
+  // inside the scroll content instead (feedbackScrollContent).
   contentFixed: {
     flex: 1,
-    padding: 20,
-    paddingBottom: 120
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   title: {
     fontSize: 24,
@@ -822,7 +854,21 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   feedbackScrollContent: {
-    paddingBottom: 140,
+    paddingBottom: 32,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 999,
+    marginTop: 24,
+  },
+  continueButtonText: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: 14,
   },
   scoreCard: {
     borderWidth: 2,

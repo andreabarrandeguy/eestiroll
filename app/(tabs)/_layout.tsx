@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const { triggerRandom, randomTrigger } = useRandom();
+  const { triggerRandom, randomTrigger, feedbackOpen } = useRandom();
   const { theme, isDark } = useTheme();
   const { t } = useTranslations();
   const insets = useSafeAreaInsets();
@@ -152,6 +152,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: theme.text,
         tabBarStyle: {
           position: 'absolute',
+          // The feedback view owns the screen and carries its own actions, so
+          // the bar stays out of the way for all of it: during the wait there
+          // is nothing useful to press and the dice would abandon the request,
+          // and once the answer is up the dice only competes with the explicit
+          // "continue learning" button.
+          ...(feedbackOpen && { display: 'none' }),
           backgroundColor: 'transparent',
           borderTopWidth: 0,
           paddingBottom: Platform.OS === 'web' ? 90 : 90 + insets.bottom,
