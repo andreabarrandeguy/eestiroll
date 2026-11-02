@@ -3,7 +3,7 @@ import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { CategoryContextType, VocabLevel } from '@/types';
 import { categories as fallbackCategories } from '@/utils/wordData';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
@@ -44,7 +44,14 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     loadContent();
   }, []);
 
-  const availableCategories = allCategories.filter(cat => !excludedCategories.includes(cat));
+  // Memoised because useRandomWords' effect depends on this array's identity:
+  // a fresh one on every provider render would re-roll the words and wipe the
+  // sentence in progress. The React Compiler happens to prevent that today,
+  // which is not something to rely on.
+  const availableCategories = useMemo(
+    () => allCategories.filter(cat => !excludedCategories.includes(cat)),
+    [allCategories, excludedCategories]
+  );
   const maxExclusions = allCategories.length - categoryCount;
 
   const setCategoryCount = async (count: number) => {

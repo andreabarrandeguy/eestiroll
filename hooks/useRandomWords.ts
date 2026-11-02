@@ -26,6 +26,16 @@ export function useRandomWords() {
     const { categoryCount, availableCategories } = useCategories();
 
     const generateNewWords = () => {
+        // The categories arrive from their own fetch, which lands *after* the
+        // screen is interactive — and the dice is wiggling for attention that
+        // whole time. Rolling in that window used to produce zero words but
+        // still bump refreshKey, which permanently replaced the "tap the dice"
+        // hint with "No categories selected" (untrue — nothing was deselected)
+        // and took the tutorial link with it. Sit it out instead: this effect
+        // already depends on availableCategories, so it re-runs by itself the
+        // moment they land, and the roll happens then.
+        if (availableCategories.length === 0) return;
+
         // Select random categories from available ones
         const shuffledCategories = shuffleArray(availableCategories);
         const selectedCategories = shuffledCategories.slice(0, categoryCount);
