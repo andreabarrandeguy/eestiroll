@@ -1,6 +1,6 @@
 import { supabase } from '@/config/supabase';
 
-export type FeedbackSource = 'config' | 'word_modal' | 'about' | 'ai_result';
+export type FeedbackSource = 'config' | 'word_modal' | 'about' | 'ai_result' | 'teachers' | 'teacher_access';
 
 interface SubmitFeedbackParams {
     message: string;

@@ -96,6 +96,11 @@ export default function AboutScreen() {
           <Text style={[styles.subscribeCtaText, { color: theme.iconInactive }]}>{t('aboutSubscribeCta')}</Text>
         </Pressable>
 
+        {/* English-only page aimed at teachers; not a translated app string. */}
+        <Pressable onPress={() => router.push('/teachers')} style={styles.subscribeCta}>
+          <Text style={[styles.subscribeCtaText, { color: theme.iconInactive }]}>For teachers</Text>
+        </Pressable>
+
         <Pressable onPress={() => router.push('/privacy')} style={styles.subscribeCta}>
           <Text style={[styles.subscribeCtaText, { color: theme.iconInactive }]}>{t('privacyPolicy')}</Text>
         </Pressable>
