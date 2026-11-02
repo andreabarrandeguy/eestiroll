@@ -3,8 +3,9 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { SentenceExamplesModal } from '@/components/SentenceExamplesModal';
 import { SignInPromptModal } from '@/components/SignInPromptModal';
+import { SkeletonLine } from '@/components/SkeletonLine';
 import { SubscribeModal } from '@/components/SubscribeModal';
-import { getWordTranslation, WordCard } from '@/components/WordCard';
+import { getWordTranslation, WordCard, WordCardPlaceholder } from '@/components/WordCard';
 import { Theme } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,10 +20,9 @@ import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, Respo
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
 import { categoryColorMap } from '@/utils/wordData';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Animated, Easing, Image, Keyboard, LayoutChangeEvent, Platform, ScrollView, StyleProp, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 const languageMap: Record<string, string> = {
   es: "Spanish",
@@ -32,6 +32,20 @@ const languageMap: Record<string, string> = {
 
 const BASE_INPUT_HEIGHT = 30;
 const MAX_INPUT_HEIGHT = 120; // matches styles.input.maxHeight
+
+// Long enough to read as a movement, short enough that it is over well before
+// the AI answers — it fills the start of the wait, it does not add to it.
+const HANDOFF_MS = 600;
+// Partway through the trip the field stops being a field: the label's room
+// opens, the sentence takes the card's italic and the box settles into the
+// card's shape. One moment, late enough that the movement is nearly done.
+const MORPH_AT = 0.55;
+
+// styles.userSentenceLabel's lineHeight plus its marginBottom: the room the
+// travelling box opens for the label once it has landed.
+const SENTENCE_LABEL_BLOCK = 18;
+// styles.feedbackContainer's marginTop, which the rise has to stop short of.
+const FEEDBACK_TOP_MARGIN = 20;
 
 // The native animated module doesn't exist on web — requesting it there just
 // prints a noisy fallback warning on every animation.
@@ -54,60 +68,71 @@ const aiErrorProperties = (e: unknown): Record<string, string | number> => {
   return { reason: 'unknown' };
 };
 
-const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
-  const [opacity] = useState(() => new Animated.Value(0.3));
+
+// One step of the home scaffold. The action and the words that complete it are
+// one sentence — "Tap the dice to get some Estonian words" — so they share a
+// single Text and wrap together; splitting them across the row read as two
+// unrelated labels. `action` is what the person does, in bold; `rest` finishes
+// the phrase. `trailing` hangs an optional control off the end.
+const StepHeader = ({
+  step,
+  action,
+  rest,
+  theme,
+  isDark,
+  trailing,
+}: {
+  step: string;
+  action: string;
+  rest: string;
+  theme: Theme;
+  isDark: boolean;
+  trailing?: React.ReactNode;
+}) => (
+  <View style={styles.stepRow}>
+    <Text style={[styles.stepHeading, { color: theme.text }]}>
+      {/* #35529D is too dark to carry a small numeral on a near-black
+          background, so the numbers borrow the lighter blue in dark mode. */}
+      <Text style={[styles.stepNumber, { color: isDark ? theme.lightblue : theme.accent }]}>
+        {step}
+      </Text>
+      {'  '}
+      {action}
+      <Text style={[styles.stepRest, { color: theme.iconInactive }]}>{' ' + rest}</Text>
+    </Text>
+    {trailing}
+  </View>
+);
+
+// The score lands above a sentence card that is already on screen and pushes
+// it down. Fading and settling in makes that read as the answer arriving rather
+// than as the layout jumping.
+const ScoreCardEntrance = ({ style, children }: { style: any; children: React.ReactNode }) => {
+  const [enter] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: NATIVE_DRIVER,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: NATIVE_DRIVER,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
+    Animated.timing(enter, {
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+  }, [enter]);
 
   return (
     <Animated.View
-      style={[{
-        width,
-        height,
-        borderRadius: 6,
-        backgroundColor: '#888',
-        opacity,
-        marginVertical: 4,
-      }, style]}
-    />
+      style={[
+        style,
+        {
+          opacity: enter,
+          transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
   );
 };
-
-// The owner's own hand-drawn arrow, pixel-traced from her photo (contour
-// extraction on the inked silhouette, not a hand-guessed bezier approximation)
-// so it keeps her actual stroke shape and natural width variation. Filled,
-// not stroked — the path is the ink's outline, with the loop's hole as an
-// evenodd sub-path. Sized as width/height="100%" of its (flex-measured)
-// wrapper rather than fixed pixels, so it scales to fit on any screen height
-// instead of a fixed size overflowing into the text above it.
-const SquiggleArrow = ({ color }: { color: string }) => (
-  <Svg width="100%" height="100%" viewBox="0 0 473 727" preserveAspectRatio="xMidYMid meet">
-    <Path
-      fillRule="evenodd"
-      fill={color}
-      d="M250.0,718.5 L217.0,713.5 L186.0,702.5 L177.5,695.0 L177.5,687.0 L187.0,680.5 L228.5,695.0 L211.5,674.0 L196.5,645.0 L188.5,620.0 L183.5,583.0 L186.5,534.0 L205.5,404.0 L206.5,352.0 L204.5,334.0 L160.0,340.5 L127.0,339.5 L89.0,330.5 L60.0,315.5 L33.5,291.0 L14.5,260.0 L8.5,243.0 L4.5,220.0 L7.5,193.0 L16.5,175.0 L29.0,162.5 L42.0,154.5 L57.0,149.5 L93.0,149.5 L111.0,154.5 L130.0,163.5 L155.0,181.5 L177.5,206.0 L191.5,228.0 L204.5,257.0 L212.5,283.0 L217.5,313.0 L231.0,309.5 L260.0,295.5 L288.0,276.5 L323.5,243.0 L347.5,213.0 L379.5,163.0 L404.5,114.0 L423.5,68.0 L438.5,14.0 L444.0,8.5 L452.0,7.5 L460.5,14.0 L461.5,22.0 L442.5,71.0 L402.5,153.0 L356.5,226.0 L333.5,254.0 L297.0,288.5 L267.0,308.5 L219.5,329.0 L222.5,364.0 L221.5,401.0 L202.5,539.0 L200.5,583.0 L204.5,612.0 L212.5,637.0 L225.5,661.0 L245.0,682.5 L247.5,679.0 L252.5,635.0 L258.0,630.5 L265.0,629.5 L273.5,636.0 L272.5,702.0 L265.0,713.5 L250.0,718.5 Z M165.5,325.0 L200.0,319.5 L202.5,318.0 L202.5,312.0 L196.5,283.0 L187.5,256.0 L174.5,230.0 L158.5,208.0 L131.0,183.5 L115.0,174.5 L95.0,167.5 L83.0,165.5 L63.0,166.5 L53.0,169.5 L38.0,178.5 L28.5,190.0 L23.5,202.0 L22.5,228.0 L30.5,256.0 L47.5,283.0 L70.0,303.5 L95.0,316.5 L135.0,325.5 L165.5,325.0 Z"
-    />
-  </Svg>
-);
 
 const AI_LOADING_MESSAGE_KEYS: TranslationKey[] = ['aiLoadingMsg1', 'aiLoadingMsg2', 'aiLoadingMsg3', 'aiLoadingMsg4'];
 
@@ -153,19 +178,25 @@ const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) =
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   return (
-    <View style={{ alignItems: 'center', marginVertical: 8 }}>
-      <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <Icon name="sparkles-outline" size={16} color={theme.iconInactive} />
-        </Animated.View>
-        <Animated.Text style={{ opacity: fade, color: theme.iconInactive, fontSize: 13, fontFamily: Fonts.bodyMedium }}>
-          {t(AI_LOADING_MESSAGE_KEYS[msgIndex])}
-        </Animated.Text>
-      </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
+      <Animated.View style={{ transform: [{ rotate }] }}>
+        <Icon name="sparkles-outline" size={16} color={theme.iconInactive} />
+      </Animated.View>
+      <Animated.Text style={{ opacity: fade, color: theme.iconInactive, fontSize: 13, fontFamily: Fonts.bodyMedium }}>
+        {t(AI_LOADING_MESSAGE_KEYS[msgIndex])}
+      </Animated.Text>
     </View>
   );
 };
+
+// What stands in the score card's slot until there is a score. Separate from
+// the spinner above so the sentence can sit between them — in the same place it
+// ends up once the answer arrives, instead of jumping down past the score.
+const AIScoreSkeleton = () => (
+  <View style={{ marginTop: 8 }}>
+    <SkeletonLine width="100%" height={80} style={{ borderRadius: 12 }} />
+  </View>
+);
 
 const AIErrorState = ({
   theme,
@@ -211,7 +242,7 @@ const AIErrorState = ({
 );
 
 export default function HomeScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t, language } = useTranslations();
   const { addEntry } = useHistory();
   const { 
@@ -235,14 +266,55 @@ export default function HomeScreen() {
   const [inputMountKey, setInputMountKey] = useState(0);
   const [examplesModalVisible, setExamplesModalVisible] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
-  const wasSentenceEmptyRef = useRef(true);
+  // The hand-off from "sentence sent" to "answer on screen" used to be a hard
+  // cut, which made sending and reading look like two unrelated screens. It is
+  // one movement now, and the thing that carries it is the field itself: the
+  // box the sentence was typed into travels down into the feedback section and
+  // *is* the box that holds the sentence while the AI thinks. Nothing is
+  // crossfaded into place, so there is nothing to recognise as a substitution.
+  //
+  // `sending` holds the screen in the input layout while it plays. The request
+  // goes out first, so the animation runs inside the wait rather than adding
+  // to it.
+  const [sending, setSending] = useState(false);
+  const [handoff] = useState(() => new Animated.Value(0));
+  // Measured rather than guessed: with three words or nine, the distances are
+  // completely different, and a hardcoded one is wrong in most cases.
+  //
+  // Heights, not positions. react-native-web drives onLayout off a
+  // ResizeObserver, so it reports a box only when that box's own size changes
+  // — never when something above it grows and shoves it down the screen. Any
+  // offset read that way goes stale the first time a roll fills the word
+  // cards. The one exception is the card's offset inside the panel, which
+  // nothing above it can move.
+  const [stepsHeight, setStepsHeight] = useState(0);
+  const [fieldHeight, setFieldHeight] = useState(0);
+  const [cardBox, setCardBox] = useState({ y: 0, height: 0 });
+  // Flipped between the two stages: the descent is made by the field exactly as
+  // it was, and only once it has landed does it turn into the sentence card.
+  const [becameCard, setBecameCard] = useState(false);
+  const handoffStartedRef = useRef(false);
+  // Where the card ends up, less where the box starts. The panel does not move
+  // at all any more: for the whole send it is parked at the feedback layout's
+  // own top margin, so the landing place is that margin plus the card's offset
+  // inside the panel. That offset is read off an invisible copy of the real
+  // card, taken on the card itself so its own margin is inside the reading. The
+  // box starts directly below the steps, which is their height.
+  const cardTravel = FEEDBACK_TOP_MARGIN + cardBox.y - stepsHeight;
+  const inputNodeRef = useRef<unknown>(null);
   const sentenceStartedRef = useRef(false);
   const subscribeModal = useSubscribeModal();
   const signInPromptModal = useSignInPromptModal();
   const { signOut } = useAuth();
   const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
 
-  const use3Columns = words.length >= 5;
+  // The cards always sit three to a row and wrap, so steps 2 and 3 land in the
+  // same place whatever someone set the roll size to in Config.
+  const hasWords = words.length > 0;
+  // The one genuine error state: a roll happened and produced nothing because
+  // everything is excluded. Before the first roll an empty board is just the
+  // board, not a problem.
+  const noCategoriesSelected = !hasWords && refreshKey > 0;
 
   // When new words appear (new roll), go back to input mode. Adjusted directly
   // during render (rather than in an effect) since it's just resetting state to
@@ -260,9 +332,12 @@ export default function HomeScreen() {
   // so the flag is mirrored into the shared context. An effect rather than a
   // call inside runAICheck because the refreshKey reset above clears this
   // during render, where writing another component's state isn't allowed.
+  // Hidden from the moment the plane leaves, not just once the answer is up:
+  // tapping the dice mid-flight would abandon the request that is already on
+  // its way and lose the sentence with it.
   useEffect(() => {
-    setFeedbackOpen(showingFeedback);
-  }, [showingFeedback, setFeedbackOpen]);
+    setFeedbackOpen(showingFeedback || sending);
+  }, [showingFeedback, sending, setFeedbackOpen]);
 
   // Leaving the screen must not strand the bar hidden.
   useEffect(() => () => setFeedbackOpen(false), [setFeedbackOpen]);
@@ -270,9 +345,12 @@ export default function HomeScreen() {
   // Refs can't be written during render (unlike state) — this piece of the
   // same reset stays in an effect.
   useEffect(() => {
-    wasSentenceEmptyRef.current = true;
     sentenceStartedRef.current = false;
-  }, [refreshKey]);
+    setSending(false);
+    setBecameCard(false);
+    handoffStartedRef.current = false;
+    handoff.setValue(0);
+  }, [refreshKey, handoff]);
 
   // Impression on the first-run invitation. Without it, a visitor who saw the
   // hint and left can't be told apart from one who saw something broken.
@@ -282,21 +360,35 @@ export default function HomeScreen() {
     }
   }, [words.length, showingFeedback, refreshKey]);
 
-  // On web, the box height is driven by the last-measured content size (see
-  // onContentSizeChange below), which only ever grows — a textarea's
-  // scrollHeight can't report less than its current rendered height. So the
-  // moment typing starts, collapse it back down first; the next keystroke's
-  // measurement will then correctly size it to the (short) real content
-  // instead of staying stuck at the placeholder's taller height.
-  const collapseInputIfWasEmpty = (newText: string) => {
+  // A textarea's scrollHeight can never report less than the height the
+  // element already has, and react-native-web reads it during onChange off an
+  // element that is still at its old, taller size. That is why the field grew
+  // to two lines and then stayed there however much text was deleted.
+  //
+  // Measuring here instead, with the height collapsed for the length of the
+  // read, gives a figure that can come down as well as go up. It has to be
+  // zero and not `auto`: react-native-web renders a multiline field as a
+  // <textarea>, and a textarea left to size itself falls back on its `rows`
+  // attribute, which defaults to two — so `auto` measures the element's own
+  // default rather than the text in it, and the field sits two lines tall
+  // while empty. At zero, scrollHeight reports the content and its padding,
+  // which for one line is exactly BASE_INPUT_HEIGHT.
+  //
+  // A layout effect rather than a change handler so it also covers text
+  // arriving by other routes — a word tapped into the sentence, the field
+  // being cleared — and so it lands before the frame is painted.
+  useLayoutEffect(() => {
     if (Platform.OS !== 'web') return;
-    const wasEmpty = wasSentenceEmptyRef.current;
-    const isEmpty = newText.length === 0;
-    if (wasEmpty && !isEmpty) {
-      setWebInputHeight(BASE_INPUT_HEIGHT);
-    }
-    wasSentenceEmptyRef.current = isEmpty;
-  };
+    const node: any = inputNodeRef.current;
+    if (!node || !node.style) return;
+
+    const held = node.style.height;
+    node.style.height = '0px';
+    const measured = node.scrollHeight;
+    node.style.height = held;
+
+    if (measured > 0) setWebInputHeight(measured);
+  }, [sentence, refreshKey, inputMountKey, sending]);
 
   const handleSentenceChange = (text: string) => {
     // Once per round, the moment the box stops being empty.
@@ -304,7 +396,6 @@ export default function HomeScreen() {
       sentenceStartedRef.current = true;
       track(EVENTS.SENTENCE_STARTED, { wordCount: words.length });
     }
-    collapseInputIfWasEmpty(text);
     setSentence(text);
   };
 
@@ -312,7 +403,6 @@ export default function HomeScreen() {
     const before = sentence.slice(0, cursorPosition);
     const after = sentence.slice(cursorPosition);
     const newSentence = before + word + after;
-    collapseInputIfWasEmpty(newSentence);
     setSentence(newSentence);
     setCursorPosition(cursorPosition + word.length);
   };
@@ -330,9 +420,10 @@ export default function HomeScreen() {
     setLastSentence(sentenceToCheck);
     setAiResult(null);
     setAiError(false);
-    setShowingFeedback(true);
     setAiLoading(true);
     Keyboard.dismiss();
+    // Who switches to the feedback layout depends on the caller: a first send
+    // hands over when its animation lands, a retry is already there.
 
     try {
       const result = await checkSentenceWithAI({
@@ -348,7 +439,6 @@ export default function HomeScreen() {
       subscribeModal.onAICheckSuccess();
       setSentence('');
       setInputMountKey(k => k + 1);
-      wasSentenceEmptyRef.current = true;
     } catch (e) {
       if (e instanceof DailyLimitError) {
         // Tracked as neither success nor failure before, so hitting the cap
@@ -357,8 +447,7 @@ export default function HomeScreen() {
         addEntry(words, sentenceToCheck);
         setSentence('');
         setInputMountKey(k => k + 1);
-        wasSentenceEmptyRef.current = true;
-        setAiRemaining(0);
+          setAiRemaining(0);
         setAiIsAuthenticated(e.isAuthenticated);
       } else if (e instanceof SessionInvalidError) {
         console.error("AI check failed: invalid session, signing out", e);
@@ -375,12 +464,84 @@ export default function HomeScreen() {
     }
   }, [words, language, addEntry, subscribeModal, setSentence, signOut]);
 
+  const startHandoff = useCallback(() => {
+    if (!sentence.trim()) return;
+
+    setSending(true);
+    setBecameCard(false);
+    // Thrown away so the gate below waits for a reading of the card this send
+    // is flying towards: a longer sentence wraps onto a second line, and the box
+    // has to morph to that height rather than to the last one's.
+    setCardBox({ y: 0, height: 0 });
+    handoffStartedRef.current = false;
+    handoff.setValue(0);
+    // Sent first, animated second — the request is not held back by it. The
+    // movement itself starts from the effect below, once the screen has been
+    // measured.
+    runAICheck(sentence.trim());
+  }, [sentence, runAICheck, handoff]);
+
   const handleAICheck = useCallback(() => {
     if (!sentence.trim()) return;
-    runAICheck(sentence.trim());
-  }, [sentence, runAICheck]);
+    // One frame later, for the same reason the dice defers its roll: the
+    // hand-off rearranges the screen around the button that was just pressed,
+    // and doing that inside the touch's own event leaves the browser reporting
+    // a gesture whose element has moved out from under it.
+    requestAnimationFrame(() => startHandoff());
+  }, [sentence, startHandoff]);
+
+
+  // One movement, one value. The typography change still has its own moment —
+  // a listener flips it at MORPH_AT rather than a second animation doing it —
+  // so the box never stops or changes direction on the way.
+  const runHandoff = useCallback(() => {
+    const id = handoff.addListener(({ value }) => {
+      if (value >= MORPH_AT) setBecameCard(true);
+    });
+
+    Animated.timing(handoff, {
+      toValue: 1,
+      duration: HANDOFF_MS,
+      easing: Easing.inOut(Easing.cubic),
+      // The field's background and text colour travel together, and colours
+      // cannot go through the native driver. Web has no native driver anyway,
+      // which is where this runs.
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      handoff.removeListener(id);
+      if (!finished) return;
+      // The box is now exactly where the feedback layout draws the sentence,
+      // showing the same thing, so swapping the layout underneath it changes
+      // nothing on screen.
+      setShowingFeedback(true);
+      setSending(false);
+      setBecameCard(false);
+    });
+  }, [handoff]);
+
+  // How far the box falls depends on the score's stand-in, which only exists
+  // once `sending` is true — so the first frame of a send is spent measuring
+  // and the movement begins on the next one. The timer is a safety net: if a
+  // measurement never arrives, the hand-off still happens rather than leaving
+  // someone watching a field that will never move.
+  useEffect(() => {
+    if (!sending || handoffStartedRef.current) return;
+    const begin = () => {
+      if (handoffStartedRef.current) return;
+      handoffStartedRef.current = true;
+      runHandoff();
+    };
+
+    if (cardBox.height > 0 && fieldHeight > 0 && stepsHeight > 0) {
+      begin();
+      return;
+    }
+    const fallback = setTimeout(begin, 250);
+    return () => clearTimeout(fallback);
+  }, [sending, cardBox.height, fieldHeight, stepsHeight, runHandoff]);
 
   const handleRetry = useCallback(() => {
+    setShowingFeedback(true);
     runAICheck(lastSentence);
   }, [lastSentence, runAICheck]);
 
@@ -388,7 +549,11 @@ export default function HomeScreen() {
     setSentence(lastSentence);
     setShowingFeedback(false);
     setAiError(false);
-  }, [lastSentence, setSentence]);
+    setSending(false);
+    setBecameCard(false);
+    handoffStartedRef.current = false;
+    handoff.setValue(0);
+  }, [lastSentence, setSentence, handoff]);
 
   const getScoreColor = (score: number) => {
     if (score >= 4) return '#3C8D5F';
@@ -414,6 +579,21 @@ export default function HomeScreen() {
   // browser scrolls this container the way it does on any web form: the title
   // slides up, the input always stays reachable, and nothing fights anything.
   // The feedback view keeps its own layout — it has a ScrollView of its own.
+  // One definition, two places: the invisible copy that reserves the landing
+  // spot during a send, and the real one the feedback layout draws under the
+  // score. `extra` is how the reserved copy hides itself and gets measured —
+  // on the card itself, margin included, so what the box aims at is the card's
+  // true frame rather than a wrapper's.
+  const renderSentenceCard = (extra?: { style?: StyleProp<ViewStyle>; onLayout?: (e: LayoutChangeEvent) => void }) => (
+    <View
+      style={[styles.userSentenceContainer, { borderColor: theme.border }, extra?.style]}
+      onLayout={extra?.onLayout}
+    >
+      <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
+      <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
+    </View>
+  );
+
   const inner = (
     <>
         <Text style={[styles.title, { color: theme.text }]}>
@@ -426,102 +606,197 @@ export default function HomeScreen() {
           ll
         </Text>
 
-        {words.length === 0 && !showingFeedback && refreshKey === 0 && (
-          <View style={styles.rollHintContainer}>
-            <View style={styles.rollHintSpacerTop} />
+        {/* The three steps are one continuous scaffold rather than states that
+            replace each other: before the first roll each step shows a drawing
+            of what it will hold, and the real thing takes the same slot when it
+            arrives. Nothing moves, so nothing reads as appearing or breaking —
+            which is the whole point, since the screen used to say what the app
+            did without ever showing it. */}
+        {/* One parent for both layers, starting right under the title, which is
+            also where the feedback layout begins — that is what makes the two
+            comparable at all. */}
+        {!showingFeedback && (
+          <View>
+          {/* Everything above the answer, as one layer. The moment a send
+              starts it leaves the flow, and with nothing holding that space the
+              panel below simply sits where the feedback layout will draw it: no
+              rise, no transform, no distances to keep in agreement, and nothing
+              left to shift when the two layouts swap. Taking it out of the flow
+              does not move it, since it was already the first thing in this
+              parent. */}
+          <View style={sending ? styles.departing : undefined}>
+          <Animated.View
+            onLayout={e => setStepsHeight(e.nativeEvent.layout.height)}
+            style={{
+              opacity: handoff.interpolate({ inputRange: [0, 0.55], outputRange: [1, 0], extrapolate: 'clamp' }),
+              transform: [
+                { translateY: handoff.interpolate({ inputRange: [0, 1], outputRange: [0, -44] }) },
+              ],
+            }}
+          >
+            <StepHeader
+              step="1"
+              action={t('rollStep1Title')}
+              rest={t('rollStep1Body')}
+              theme={theme}
+              isDark={isDark}
+            />
 
-            {/* The first screen used to say only "tap the dice to get words",
-                never what the app is for — the AI feedback, which is the
-                actual product, was mentioned nowhere outside the tutorial,
-                behind a 13px grey link at the very bottom of the page. The
-                three rounds of the loop are spelled out instead, each one a
-                bold step over the detail that explains it. */}
-            <View style={styles.rollSteps}>
-              <View style={styles.rollStep}>
-                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep1Title')}</Text>
-                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep1Body')}</Text>
+            {hasWords ? (
+              <View style={[styles.wordsContainer, words.length < 3 && styles.wordsContainerShort]}>
+                {words.map((item, index) => (
+                  <View key={index} style={styles.wordSlot}>
+                    <WordCard
+                      word={item.word}
+                      category={item.category}
+                      color={categoryColorMap[item.category]}
+                      refreshKey={refreshKey}
+                      uppercaseCategory={true}
+                      compact
+                      onDoubleTap={handleDoubleTap}
+                    />
+                  </View>
+                ))}
               </View>
-              <View style={styles.rollStep}>
-                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep2Title')}</Text>
-                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep2Body')}</Text>
-              </View>
-              <View style={styles.rollStep}>
-                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep3Title')}</Text>
-                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep3Body')}</Text>
-              </View>
-            </View>
-
-            <View style={styles.squiggleWrap}>
-              <SquiggleArrow color="#35529D" />
-            </View>
-          </View>
-        )}
-
-        {words.length === 0 && !showingFeedback && refreshKey > 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyTextBold, { color: theme.text }]}>
-              {t('noCategoriesSelected')}
-            </Text>
-            <View style={styles.configHintContainer}>
-              <Text style={[styles.emptyText, { color: theme.text }]}>
-                {t('customizeCategories')}
-              </Text>
-              <Icon name="settings-outline" size={16} color={theme.text} />
-            </View>
-          </View>
-        )}
-
-        {!showingFeedback && words.length > 0 && (
-          <>
-            <View style={styles.wordsContainer}>
-              {words.map((item, index) => (
-                <View
-                  key={index}
-                  style={{ width: use3Columns ? '30%' : '48%' }}
-                >
-                  <WordCard 
-                    word={item.word} 
-                    category={item.category}
-                    color={categoryColorMap[item.category]}
-                    refreshKey={refreshKey}
-                    uppercaseCategory={true}
-                    compact={use3Columns}
-                    onDoubleTap={handleDoubleTap}
-                  />
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.stepHeaderRow}>
-              <Icon name="create-outline" size={18} color={theme.text} />
-              <Text style={[styles.stepTitle, { color: theme.text }]}>
-                {t('sentenceBuilderTitle')}{' '}
-                <Text
-                  style={[styles.builderExamplesLink, { color: theme.text }]}
-                  onPress={() => {
-                    track(EVENTS.EXAMPLES_OPENED);
-                    setExamplesModalVisible(true);
-                  }}
-                >
-                  {t('sentenceBuilderExamplesLink')}
+            ) : noCategoriesSelected ? (
+              <View style={styles.emptyContainer}>
+                <Text style={[styles.emptyTextBold, { color: theme.text }]}>
+                  {t('noCategoriesSelected')}
                 </Text>
-              </Text>
-            </View>
+                <View style={styles.configHintContainer}>
+                  <Text style={[styles.emptyText, { color: theme.text }]}>
+                    {t('customizeCategories')}
+                  </Text>
+                  <Icon name="settings-outline" size={16} color={theme.text} />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.wordsContainer}>
+                {[0, 1, 2].map(i => (
+                  <View key={i} style={styles.wordSlot}>
+                    <WordCardPlaceholder borderColor={theme.border} markColor={theme.iconInactive} />
+                  </View>
+                ))}
+              </View>
+            )}
 
-            <View style={[
+            <StepHeader
+              step="2"
+              action={t('rollStep2Title')}
+              rest={t('rollStep2Body')}
+              theme={theme}
+              isDark={isDark}
+              trailing={
+                hasWords ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      track(EVENTS.EXAMPLES_OPENED);
+                      setExamplesModalVisible(true);
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.stepInfoButton}
+                  >
+                    <Icon name="information-circle-outline" size={18} color={theme.text} />
+                  </TouchableOpacity>
+                ) : undefined
+              }
+            />
+
+          </Animated.View>
+
+
+            {/* The travelling box. On the way down its fill and border morph
+                into the sentence card's, and its contents swap from the field
+                to the sentence itself — the element is never unmounted, so
+                there is no substitution to notice. It reads `lastSentence`
+                while sending because a successful check clears `sentence`,
+                which would empty the box mid-wait. */}
+            <Animated.View
+              // Frozen while sending: the box's own shape changes as it
+              // travels, and re-measuring it mid-flight would keep moving the
+              // target it is flying towards.
+              onLayout={e => {
+                if (sending) return;
+                setFieldHeight(e.nativeEvent.layout.height);
+              }}
+              style={[
               styles.inputContainer,
+              sending && styles.sentenceBoxSending,
               {
-                backgroundColor: theme.inputBackground,
-                borderWidth: inputFocused ? 2 : 1,
-                borderColor: inputFocused ? '#3468DC' : theme.border,
-                marginTop: 16,
+                backgroundColor: sending
+                  ? handoff.interpolate({
+                      inputRange: [0, MORPH_AT, 1],
+                      outputRange: [theme.inputBackground, isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'],
+                    })
+                  : hasWords ? theme.inputBackground : 'transparent',
+                borderWidth: inputFocused && !sending ? 2 : 1,
+                borderColor: sending
+                  ? theme.border
+                  : inputFocused ? '#3468DC' : theme.border,
+                marginTop: 0,
+                // Through the descent the box keeps the field's exact
+                // dimensions — nothing about it should change while it is
+                // moving. It takes on the card's shape afterwards, together
+                // with the label and the italic, as one change rather than
+                // three scattered through the trip.
+                ...(sending ? {
+                  height: handoff.interpolate({
+                    inputRange: [0, MORPH_AT, 1],
+                    outputRange: [fieldHeight, fieldHeight, cardBox.height || fieldHeight],
+                  }),
+                  paddingHorizontal: handoff.interpolate({ inputRange: [0, MORPH_AT, 1], outputRange: [15, 15, 12] }),
+                  paddingVertical: handoff.interpolate({ inputRange: [0, MORPH_AT, 1], outputRange: [10, 10, 12] }),
+                  borderRadius: handoff.interpolate({ inputRange: [0, MORPH_AT, 1], outputRange: [12, 12, 10] }),
+                } : null),
+                transform: [
+                  { translateY: handoff.interpolate({ inputRange: [0, 1], outputRange: [0, cardTravel] }) },
+                ],
               }
             ]}>
+              {sending ? (
+                <View style={styles.sentenceBoxBody}>
+                  {/* Only once the box has landed: the label's room opens and
+                      the sentence takes the card's italic at the same moment,
+                      so there is one visible change instead of a slow drift
+                      through the descent. */}
+                  {becameCard && (
+                    <Animated.View
+                      style={{
+                        height: handoff.interpolate({ inputRange: [MORPH_AT, 1], outputRange: [0, SENTENCE_LABEL_BLOCK], extrapolate: 'clamp' }),
+                        overflow: 'hidden',
+                        opacity: handoff.interpolate({ inputRange: [MORPH_AT, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+                      }}
+                    >
+                      <Text style={[styles.userSentenceLabel, { color: theme.text }]}>
+                        {t('yourSentence')}
+                      </Text>
+                    </Animated.View>
+                  )}
+                  {/* The colour travels with the background. Left at the
+                      card's near-white, the sentence was invisible for the
+                      first half of the trip — white on a field that was still
+                      white — and looked like it had vanished and come back. */}
+                  <Animated.Text
+                    style={[
+                      becameCard ? styles.userSentenceText : styles.sentencePlain,
+                      {
+                        color: handoff.interpolate({
+                          inputRange: [0, MORPH_AT, 1],
+                          outputRange: [theme.inputText, theme.text, theme.text],
+                        }),
+                      },
+                    ]}
+                  >
+                    {lastSentence}
+                  </Animated.Text>
+                </View>
+              ) : (
               <TextInput
                 key={`${refreshKey}-${inputMountKey}`}
+                ref={node => { inputNodeRef.current = node; }}
                 style={[
                   styles.input,
-                  { color: theme.inputText },
+                  { color: hasWords ? theme.inputText : theme.text },
                   Platform.OS === 'web' && {
                     outlineStyle: 'none',
                     height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
@@ -530,40 +805,139 @@ export default function HomeScreen() {
                 placeholder={t('enterSentence')}
                 placeholderTextColor={theme.iconInactive}
                 value={sentence}
+                editable={hasWords}
                 onChangeText={handleSentenceChange}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 onSelectionChange={Platform.OS !== 'web' ? handleSelectionChange : undefined}
                 onContentSizeChange={
                   Platform.OS === 'web'
-                    ? (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
-                    : undefined
+                    ? undefined
+                    : (e) => setWebInputHeight(e.nativeEvent.contentSize.height)
                 }
                 maxLength={140}
                 multiline
               />
-              {sentence.length > 0 && (
+              )}
+
+              {(sentence.length > 0 || sending) && (
                 <TouchableOpacity
-                  style={styles.sendButton}
+                  // Taken out of the flow for the descent so the sentence can
+                  // use the card's full width — otherwise the text reflows the
+                  // moment the real card replaces this one.
+                  style={[styles.sendButton, sending && styles.sendButtonLeaving]}
                   onPress={handleAICheck}
-                  disabled={aiLoading}
+                  disabled={aiLoading || sending}
                 >
-                  {aiRemaining !== 0 ? (
-                    <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
-                  ) : (
-                    <Icon
-                      name="paper-plane"
-                      size={20}
-                      color={aiLoading ? theme.iconInactive : theme.inputText}
-                    />
-                  )}
+                  {/* Away and up, at the halfway point of the descent: the
+                      sentence has left, and the box carrying it keeps going
+                      down without it. */}
+                  <Animated.View
+                    style={{
+                      opacity: handoff.interpolate({ inputRange: [0.25, 0.6], outputRange: [1, 0], extrapolate: 'clamp' }),
+                      transform: [
+                        { translateY: handoff.interpolate({ inputRange: [0, 1], outputRange: [0, -70] }) },
+                        { rotate: handoff.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-20deg'] }) },
+                      ],
+                    }}
+                  >
+                    {aiRemaining !== 0 ? (
+                      <AIShimmerIcon size={20} loading={aiLoading} inactiveColor={theme.iconInactive} />
+                    ) : (
+                      <Icon
+                        name="paper-plane"
+                        size={20}
+                        color={aiLoading ? theme.iconInactive : theme.inputText}
+                      />
+                    )}
+                  </Animated.View>
                 </TouchableOpacity>
               )}
-            </View>
+            </Animated.View>
             {sentence.length > 0 && (
-              <Text style={[styles.sendHint, { color: theme.iconInactive }]}>{t('sendHint')}</Text>
+              <Animated.Text
+                style={[
+                  styles.sendHint,
+                  { color: theme.iconInactive, opacity: handoff.interpolate({ inputRange: [0, 0.3], outputRange: [1, 0], extrapolate: 'clamp' }) },
+                ]}
+              >
+                {t('sendHint')}
+              </Animated.Text>
             )}
-          </>
+
+            {/* Step 3 is a drawing until send: then its header leaves with the
+                rest and its body slides down to clear the space the descending
+                box is about to occupy. */}
+            <Animated.View
+              style={{
+                opacity: handoff.interpolate({ inputRange: [0, 0.25], outputRange: [1, 0], extrapolate: 'clamp' }),
+              }}
+            >
+              <StepHeader
+                step="3"
+                action={t('rollStep3Title')}
+                rest={t('rollStep3Body')}
+                theme={theme}
+                isDark={isDark}
+              />
+            </Animated.View>
+            </View>
+
+            {/* The answer's own layout, held at the same top margin
+                styles.feedbackContainer has. With the steps out of the flow
+                this is the only thing above it, so what is on screen during the
+                send and what replaces it afterwards begin at the same pixel. */}
+            <View style={sending ? styles.landingPanel : undefined}>
+              {sending ? (
+                // The feedback layout, piece for piece, drawn where that
+                // layout will draw it, with the sentence's place left open for
+                // the box on its way in. By the time the layouts swap, both
+                // sides are showing the same thing in the same place, so the
+                // swap itself is invisible.
+                <>
+                  {/* Shown only once the box has all but arrived. Earlier than
+                      that and there are two things moving at once for the eye
+                      to reconcile. */}
+                  <Animated.View
+                    style={{ opacity: handoff.interpolate({ inputRange: [0.72, 0.95], outputRange: [0, 1], extrapolate: 'clamp' }) }}
+                  >
+                    <AIScoreSkeleton />
+                  </Animated.View>
+
+                  {/* The real card, invisible, holding the place the box is
+                      flying into. Reserving the space this way means the gap is
+                      the card's own height by definition, and the landing spot
+                      is read off it rather than added up from constants. */}
+                  {renderSentenceCard({
+                    style: styles.reservedCard,
+                    onLayout: e =>
+                      setCardBox({ y: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height }),
+                  })}
+
+                  <Animated.View
+                    style={{
+                      opacity: handoff.interpolate({ inputRange: [0.8, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+                    }}
+                  >
+                    <View style={styles.thinkingRow}>
+                      <AILoadingState theme={theme} t={t} />
+                    </View>
+                    <SkeletonLine width="90%" />
+                    <SkeletonLine width="75%" />
+                    <SkeletonLine width="60%" style={{ marginTop: 12 }} />
+                    <SkeletonLine width="95%" style={{ marginTop: 12 }} />
+                    <SkeletonLine width="80%" />
+                  </Animated.View>
+                </>
+              ) : (
+                <View style={[styles.previewFeedback, { borderColor: theme.border }]}>
+                  <SkeletonLine animated={false} width="82%" height={9} />
+                  <SkeletonLine animated={false} width="64%" height={9} />
+                  <SkeletonLine animated={false} width="45%" height={9} />
+                </View>
+              )}
+            </View>
+          </View>
         )}
 
         {showingFeedback && aiError && (
@@ -574,9 +948,13 @@ export default function HomeScreen() {
 
         {showingFeedback && !aiError && (
           <View style={styles.feedbackContainer}>
-            {/* Fixed: Score card */}
+            {/* While the answer is still coming, the sentence is on top — the
+                box that just travelled down the screen left it there. The score
+                takes that place when it arrives and the sentence settles under
+                it, which is the order it reads best in once there is something
+                to read. */}
             {aiResult ? (
-              <View style={[styles.scoreCard, { backgroundColor: getScoreColor(aiResult.score) + '20', borderColor: getScoreColor(aiResult.score) }]}>
+              <ScoreCardEntrance style={[styles.scoreCard, { backgroundColor: getScoreColor(aiResult.score) + '20', borderColor: getScoreColor(aiResult.score) }]}>
                 <View style={styles.scoreTopRow}>
                   <Text style={[styles.scoreText, { color: getScoreColor(aiResult.score) }]}>
                     {aiResult.score}<Text style={styles.scoreMax}>/5</Text>
@@ -604,20 +982,16 @@ export default function HomeScreen() {
                     />
                   ))}
                 </View>
-              </View>
+              </ScoreCardEntrance>
             ) : aiRemaining === 0 ? (
               <Text style={{ color: '#E95A35', fontSize: 16, fontFamily: Fonts.bodySemiBold, textAlign: 'center' }}>
                 {t(aiIsAuthenticated ? 'dailyLimitReachedAuth' : 'dailyLimitReachedAnon')}
               </Text>
             ) : (
-              <AILoadingState theme={theme} t={t} />
+              <AIScoreSkeleton />
             )}
 
-            {/* Fixed: User sentence */}
-            <View style={[styles.userSentenceContainer, { borderColor: theme.border }]}>
-              <Text style={[styles.userSentenceLabel, { color: theme.text }]}>{t('yourSentence')}</Text>
-              <Text style={[styles.userSentenceText, { color: theme.text }]}>{lastSentence}</Text>
-            </View>
+            {renderSentenceCard()}
 
             {/* Scrollable: AI feedback fields */}
             <ScrollView 
@@ -663,6 +1037,9 @@ export default function HomeScreen() {
                 </View>
               ) : (
                 <>
+                  <View style={styles.thinkingRow}>
+                    <AILoadingState theme={theme} t={t} />
+                  </View>
                   <SkeletonLine width="90%" />
                   <SkeletonLine width="75%" />
                   <SkeletonLine width="60%" style={{ marginTop: 12 }} />
@@ -800,62 +1177,89 @@ const styles = StyleSheet.create({
     transform: [{ translateY: Platform.OS === 'web' ? 3 : -3 }],
   },
   emptyContainer: {
-    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 24,
     paddingHorizontal: 24,
   },
-  // Pre-roll hint: text pinned near the top, a flexible squiggle arrow
-  // filling the space down to the dice, and the "how it works" link
-  // anchored near the bottom, close to the dice tab button below it.
-  rollHintContainer: {
-    flex: 1,
+  stepRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 10,
+    gap: 6,
   },
-  // Percentage padding resolves against the container's WIDTH in CSS/RN Web
-  // (a common flexbox surprise), not its height — so vertical position here
-  // is split via flex ratios on real siblings instead, which measure against
-  // the actual available height.
-  rollHintSpacerTop: {
-    flex: 3,
+  stepHeading: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyBold,
+    flexShrink: 1,
   },
-  // Three steps instead of one instruction, so the space they take is no
-  // longer negligible: the top spacer gives up height to them (flex 3 vs the
-  // squiggle's 4) rather than pushing the arrow into the dice.
-  rollSteps: {
-    alignItems: 'center',
-    gap: 18,
-    marginBottom: 16,
-  },
-  rollStep: {
-    alignItems: 'center',
-  },
-  rollStepTitle: {
-    fontSize: 18,
-    textAlign: 'center',
+  stepNumber: {
+    fontSize: 15,
     fontFamily: Fonts.bodyBold,
   },
-  rollStepBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 3,
-    textAlign: 'center',
+  // Same size as the action it follows, so the line reads as one sentence —
+  // only the weight and the colour separate the instruction from its object.
+  stepRest: {
+    fontSize: 16,
     fontFamily: Fonts.bodyRegular,
   },
-  squiggleWrap: {
-    flex: 4,
-    width: '100%',
-    maxWidth: 160,
-    alignSelf: 'center',
-    minHeight: 0,
-    justifyContent: 'flex-end',
+  stepInfoButton: {
+    paddingVertical: 2,
+  },
+  // Drawings of what each step will hold. Deliberately unfilled and static —
+  // anything that pulses or looks finished reads as loading or as content.
+  previewFeedback: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
+  // What the travelling box becomes: the sentence card's padding and radius,
+  // taken on for the descent so that by the time the feedback layout draws the
+  // real card in its place, the two are the same shape.
+  sentenceBoxSending: {
+    alignItems: 'stretch',
+  },
+  sentencePlain: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontFamily: Fonts.bodyRegular,
+  },
+  sentenceBoxBody: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  thinkingRow: {
     alignItems: 'center',
-    paddingBottom: 8,
-    // Nudges the arrow relative to the dice below it — tweak these two
-    // numbers to fine-tune the aim. Negative translateX moves it left,
-    // positive translateY moves it down.
-    transform: [{ translateX: -35 }, { translateY: 1 }],
+    marginBottom: 6,
+  },
+  // Out of the flow while a send is in the air: the steps, the travelling box
+  // and the send button all leave together, and none of them should be holding
+  // space the answer is about to need. Written out rather than
+  // StyleSheet.absoluteFillObject, which this React Native version does not
+  // type.
+  departing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  landingPanel: {
+    marginTop: FEEDBACK_TOP_MARGIN,
+  },
+  reservedCard: {
+    opacity: 0,
+  },
+  sendButtonLeaving: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+  },
+  // The card is the first thing in the feedback layout now, so it carries the
+  // top margin the score card used to.
+  userSentenceLead: {
+    marginTop: 20,
   },
   emptyText: {
     fontSize: 16,
@@ -874,12 +1278,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Three to a row, filling the width exactly. `gap` plus a percentage width
+  // cannot do that — 3 x 30% leaves a gap's worth of dead space on the right —
+  // so the gutter is padding inside each slot, cancelled at the two outer
+  // edges by the container's negative margin. Percentages keep wrapping
+  // working for rolls of up to nine.
   wordsContainer: {
-    marginTop: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 8,
+    marginHorizontal: -4,
+  },
+  // A roll of one or two would otherwise hug the left edge and look like the
+  // rest failed to arrive.
+  wordsContainerShort: {
+    justifyContent: 'center',
+  },
+  wordSlot: {
+    width: '33.3333%',
+    paddingHorizontal: 4,
   },
   inputContainer: {
     marginTop: 20,
@@ -974,6 +1391,7 @@ const styles = StyleSheet.create({
   },
   userSentenceLabel: {
     fontSize: 11,
+    lineHeight: 14,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -982,6 +1400,7 @@ const styles = StyleSheet.create({
   },
   userSentenceText: {
     fontSize: 16,
+    lineHeight: 20,
     fontStyle: 'italic',
     fontFamily: Fonts.bodySemiBold,
   },
@@ -993,25 +1412,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: Fonts.bodyRegular,
   },
-  stepHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 20,
-  },
-  stepTitle: {
-    fontSize: 17,
-    fontFamily: Fonts.bodyBold,
-  },
-  builderExamplesLink: {
-    fontSize: 13,
-    textDecorationLine: 'underline',
-    fontFamily: Fonts.bodyRegular,
-  },
   sendHint: {
     fontSize: 12,
     marginTop: 8,
-    textAlign: 'center',
+    // Under the send button it refers to, not adrift in the middle.
+    textAlign: 'right',
     fontFamily: Fonts.bodyRegular,
   },
 });

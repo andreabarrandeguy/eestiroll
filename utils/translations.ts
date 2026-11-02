@@ -27,9 +27,7 @@ export const translations = {
         translation: 'Translation',
 
         // Sentence builder card
-        sentenceBuilderTitle: 'Use the words you rolled and form a sentence in Estonian.',
         sentenceBuilderExampleLabel: 'Example',
-        sentenceBuilderExamplesLink: 'Examples',
         sentenceRolledWordsLabel: 'Rolled words',
         sentenceBuilderFormHint: 'Words can change form: conjugate verbs, apply grammatical cases, add extra words if you need. Same words can be used differently:',
         sendHint: 'Tap send to get feedback on your sentence',
@@ -197,9 +195,7 @@ export const translations = {
         translation: 'Traducción',
 
         // Sentence builder card
-        sentenceBuilderTitle: 'Usá las palabras que te tocaron y formá una oración en estonio.',
         sentenceBuilderExampleLabel: 'Ejemplo',
-        sentenceBuilderExamplesLink: 'Ejemplos',
         sentenceRolledWordsLabel: 'Palabras que salieron',
         sentenceBuilderFormHint: 'Las palabras pueden cambiar de forma: conjugá verbos, aplicá casos gramaticales, agregá palabras extra si hace falta. Las mismas palabras se pueden usar de formas distintas:',
         sendHint: 'Tocá enviar para recibir feedback de tu oración',
@@ -367,9 +363,7 @@ export const translations = {
         translation: 'Перевод',
 
         // Sentence builder card
-        sentenceBuilderTitle: 'Используйте выпавшие слова и составьте предложение на эстонском.',
         sentenceBuilderExampleLabel: 'Пример',
-        sentenceBuilderExamplesLink: 'Примеры',
         sentenceRolledWordsLabel: 'Выпавшие слова',
         sentenceBuilderFormHint: 'Слова могут менять форму: спрягайте глаголы, используйте падежи, добавляйте дополнительные слова при необходимости. Одни и те же слова можно использовать по-разному:',
         sendHint: 'Нажмите отправить, чтобы получить отзыв о предложении',

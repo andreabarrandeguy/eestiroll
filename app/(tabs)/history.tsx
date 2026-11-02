@@ -1,5 +1,6 @@
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
+import { SkeletonLine } from '@/components/SkeletonLine';
 import { getAllWordTranslations, getWordTranslation } from '@/components/WordCard';
 import { WordModal } from '@/components/WordModal';
 import { Fonts } from '@/constants/Fonts';
@@ -12,7 +13,7 @@ import { HistoryEntry, Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
 import { EVENTS, track } from '@/services/analytics';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const languageMap: Record<string, string> = {
@@ -27,47 +28,6 @@ const getScoreColor = (score: number) => {
   return '#E95A35';
 };
 
-// The native animated module doesn't exist on web — requesting it there just
-// prints a noisy fallback warning on every animation.
-const NATIVE_DRIVER = Platform.OS !== 'web';
-
-const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
-  const [opacity] = useState(() => new Animated.Value(0.3));
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: NATIVE_DRIVER,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: NATIVE_DRIVER,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
-
-  return (
-    <Animated.View
-      style={[{
-        width,
-        height,
-        borderRadius: 6,
-        backgroundColor: '#888',
-        opacity,
-        marginVertical: 4,
-      }, style]}
-    />
-  );
-};
 
 export default function HistoryScreen() {
   // Autocapture of screen views is off, so without this the tab is invisible.
