@@ -236,6 +236,7 @@ export default function HomeScreen() {
   const [examplesModalVisible, setExamplesModalVisible] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const wasSentenceEmptyRef = useRef(true);
+  const sentenceStartedRef = useRef(false);
   const subscribeModal = useSubscribeModal();
   const signInPromptModal = useSignInPromptModal();
   const { signOut } = useAuth();
@@ -270,7 +271,16 @@ export default function HomeScreen() {
   // same reset stays in an effect.
   useEffect(() => {
     wasSentenceEmptyRef.current = true;
+    sentenceStartedRef.current = false;
   }, [refreshKey]);
+
+  // Impression on the first-run invitation. Without it, a visitor who saw the
+  // hint and left can't be told apart from one who saw something broken.
+  useEffect(() => {
+    if (words.length === 0 && !showingFeedback && refreshKey === 0) {
+      track(EVENTS.ROLL_HINT_SHOWN);
+    }
+  }, [words.length, showingFeedback, refreshKey]);
 
   // On web, the box height is driven by the last-measured content size (see
   // onContentSizeChange below), which only ever grows — a textarea's
@@ -289,6 +299,11 @@ export default function HomeScreen() {
   };
 
   const handleSentenceChange = (text: string) => {
+    // Once per round, the moment the box stops being empty.
+    if (!sentenceStartedRef.current && text.length > 0) {
+      sentenceStartedRef.current = true;
+      track(EVENTS.SENTENCE_STARTED, { wordCount: words.length });
+    }
     collapseInputIfWasEmpty(text);
     setSentence(text);
   };
@@ -326,6 +341,7 @@ export default function HomeScreen() {
         language: languageMap[language] || "English",
       });
       setAiResult(result);
+      track(EVENTS.AI_CHECK_SUCCEEDED, { score: result.score, remaining: result.remaining });
       setAiRemaining(result.remaining);
       setAiIsAuthenticated(result.isAuthenticated);
       addEntry(words, sentenceToCheck, result);
@@ -335,6 +351,9 @@ export default function HomeScreen() {
       wasSentenceEmptyRef.current = true;
     } catch (e) {
       if (e instanceof DailyLimitError) {
+        // Tracked as neither success nor failure before, so hitting the cap
+        // looked like silence.
+        track(EVENTS.AI_LIMIT_REACHED, { isAuthenticated: e.isAuthenticated });
         addEntry(words, sentenceToCheck);
         setSentence('');
         setInputMountKey(k => k + 1);
@@ -411,9 +430,25 @@ export default function HomeScreen() {
           <View style={styles.rollHintContainer}>
             <View style={styles.rollHintSpacerTop} />
 
-            <View style={styles.emptyTextGroup}>
-              <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine1')}</Text>
-              <Text style={[styles.emptyTextBold, { color: theme.text }]}>{t('rollHintLine2')}</Text>
+            {/* The first screen used to say only "tap the dice to get words",
+                never what the app is for — the AI feedback, which is the
+                actual product, was mentioned nowhere outside the tutorial,
+                behind a 13px grey link at the very bottom of the page. The
+                three rounds of the loop are spelled out instead, each one a
+                bold step over the detail that explains it. */}
+            <View style={styles.rollSteps}>
+              <View style={styles.rollStep}>
+                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep1Title')}</Text>
+                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep1Body')}</Text>
+              </View>
+              <View style={styles.rollStep}>
+                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep2Title')}</Text>
+                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep2Body')}</Text>
+              </View>
+              <View style={styles.rollStep}>
+                <Text style={[styles.rollStepTitle, { color: theme.text }]}>{t('rollStep3Title')}</Text>
+                <Text style={[styles.rollStepBody, { color: theme.iconInactive }]}>{t('rollStep3Body')}</Text>
+              </View>
             </View>
 
             <View style={styles.squiggleWrap}>
@@ -463,7 +498,10 @@ export default function HomeScreen() {
                 {t('sentenceBuilderTitle')}{' '}
                 <Text
                   style={[styles.builderExamplesLink, { color: theme.text }]}
-                  onPress={() => setExamplesModalVisible(true)}
+                  onPress={() => {
+                    track(EVENTS.EXAMPLES_OPENED);
+                    setExamplesModalVisible(true);
+                  }}
                 >
                   {t('sentenceBuilderExamplesLink')}
                 </Text>
@@ -780,10 +818,30 @@ const styles = StyleSheet.create({
   // is split via flex ratios on real siblings instead, which measure against
   // the actual available height.
   rollHintSpacerTop: {
-    flex: 5,
+    flex: 3,
   },
-  emptyTextGroup: {
+  // Three steps instead of one instruction, so the space they take is no
+  // longer negligible: the top spacer gives up height to them (flex 3 vs the
+  // squiggle's 4) rather than pushing the arrow into the dice.
+  rollSteps: {
     alignItems: 'center',
+    gap: 18,
+    marginBottom: 16,
+  },
+  rollStep: {
+    alignItems: 'center',
+  },
+  rollStepTitle: {
+    fontSize: 18,
+    textAlign: 'center',
+    fontFamily: Fonts.bodyBold,
+  },
+  rollStepBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 3,
+    textAlign: 'center',
+    fontFamily: Fonts.bodyRegular,
   },
   squiggleWrap: {
     flex: 4,

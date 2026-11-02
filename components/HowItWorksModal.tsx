@@ -1,5 +1,6 @@
 import { AIShimmerIcon } from '@/components/AIShimmerIcon';
 import { Icon } from '@/components/Icon';
+import { EVENTS, track } from '@/services/analytics';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
@@ -483,15 +484,21 @@ export function HowItWorksModal({ visible, onDismiss }: HowItWorksModalProps) {
   }, [visible]);
 
   const close = () => {
+    // Opening was tracked; finishing was not, so there was no way to tell
+    // someone who read it from someone who shut it on step 1.
+    track(EVENTS.HOW_IT_WORKS_DISMISSED, { step, totalSteps: STEPS.length });
     onDismiss();
   };
 
   const advance = () => {
     if (step >= STEPS.length - 1) {
-      close();
+      track(EVENTS.HOW_IT_WORKS_COMPLETED, { totalSteps: STEPS.length });
+      onDismiss();
       return;
     }
-    setStep((s) => s + 1);
+    const next = step + 1;
+    track(EVENTS.HOW_IT_WORKS_STEP, { step: next, totalSteps: STEPS.length });
+    setStep(next);
   };
 
   const back = () => {

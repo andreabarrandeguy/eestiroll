@@ -23,7 +23,7 @@ import { RandomProvider } from '@/contexts/RandomContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Fonts } from '@/constants/Fonts';
 import { ThemeMode } from '@/constants/Colors';
-import { setPostHogInstance } from '@/services/analytics';
+import { EVENTS, setPostHogInstance, track } from '@/services/analytics';
 import { StorageService } from '@/services/storage';
 import { useViewportPin } from '@/hooks/useViewportPin';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
@@ -114,6 +114,9 @@ export default function RootLayout() {
       setIsReady(true);
     } catch (e) {
       console.error('Error loading content:', e);
+      track(EVENTS.BOOT_FAILED, {
+        reason: e instanceof Error ? e.message : 'unknown',
+      });
       setError('Failed to load content. Please check your connection.');
     }
   };
@@ -140,8 +143,14 @@ export default function RootLayout() {
     </Head>
   );
 
+  // Every branch below is assigned, not returned: the analytics provider has to
+  // wrap the boot and error screens too. Mounting it only around the ready app
+  // meant anyone who bounced or hung on "Loading content..." produced no events
+  // at all and never appeared in the funnel — the top of it was fiction.
+  let screen: React.ReactNode;
+
   if (error) {
-    return (
+    screen = (
       <>
         {pageTitle}
         <View style={[styles.centerContainer, { backgroundColor: bootBackground }]}>
@@ -152,10 +161,8 @@ export default function RootLayout() {
         </View>
       </>
     );
-  }
-
-  if (!isReady || !fontsLoaded) {
-    return (
+  } else if (!isReady || !fontsLoaded) {
+    screen = (
       <>
         {pageTitle}
         <View style={[styles.centerContainer, { backgroundColor: bootBackground }]}>
@@ -164,9 +171,8 @@ export default function RootLayout() {
         </View>
       </>
     );
-  }
-
-  const appContent = (
+  } else {
+    screen = (
     <>
       {pageTitle}
       <ThemeProvider>
@@ -185,12 +191,13 @@ export default function RootLayout() {
       </LanguageProvider>
       </AuthProvider>
       </ThemeProvider>
-    </>
-  );
+      </>
+    );
+  }
 
   if (!POSTHOG_API_KEY) {
     console.warn('PostHog API key not set. Analytics disabled.');
-    return appContent;
+    return screen;
   }
 
   return (
@@ -207,7 +214,7 @@ export default function RootLayout() {
       }}
     >
       <AnalyticsInitializer />
-      {appContent}
+      {screen}
     </PostHogProvider>
   );
 }

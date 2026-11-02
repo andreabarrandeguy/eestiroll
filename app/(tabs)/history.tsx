@@ -10,6 +10,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { checkSentenceWithAI, DailyLimitError } from '@/services/aiService';
 import { HistoryEntry, Word } from '@/types';
 import { categoryColorMap } from '@/utils/wordData';
+import { EVENTS, track } from '@/services/analytics';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -69,6 +70,11 @@ const SkeletonLine = ({ width = '100%' as any, height = 16, style = {} }) => {
 };
 
 export default function HistoryScreen() {
+  // Autocapture of screen views is off, so without this the tab is invisible.
+  useEffect(() => {
+    track(EVENTS.HISTORY_OPENED);
+  }, []);
+
   const { history, deleteEntry, deleteMultiple, updateNote, updateEntryAI } = useHistory();
   const { theme } = useTheme();
   const { t } = useTranslations();

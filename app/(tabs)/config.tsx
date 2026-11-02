@@ -10,7 +10,7 @@ import { EVENTS, track } from '@/services/analytics';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const APP_SHARE_URL = 'https://eestiroll.ee/';
@@ -53,6 +53,11 @@ function SectionLabel({ label, theme, first }: { label: string; theme: Theme; fi
 }
 
 export default function ConfigScreen() {
+  // Autocapture of screen views is off, so without this the tab is invisible.
+  useEffect(() => {
+    track(EVENTS.CONFIG_OPENED);
+  }, []);
+
   const router = useRouter();
   const { theme, isDark, toggleTheme } = useTheme();
   const { currentLanguageOption } = useLanguage();
