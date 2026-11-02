@@ -9,8 +9,43 @@ import { EVENTS, track } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Easing, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const BLOOM_DARK = '144,169,228';   // theme.lightblue
+const BLOOM_LIGHT = '53,82,157';    // theme.accent
+
+// A soft bloom under the dice, so the rings read as light coming off the
+// button rather than two wireframe circles drawn around it. React Native has
+// no radial gradient, but react-native-web passes backgroundImage straight
+// through to CSS; everywhere else this degrades to a flat translucent disc,
+// which is the same idea with harder edges.
+const glowStyle = (rgb: string) =>
+  Platform.OS === 'web'
+    ? ({
+        backgroundImage:
+          'radial-gradient(circle, rgba(' + rgb + ',0.40) 0%, rgba(' + rgb + ',0.12) 45%, rgba(' + rgb + ',0) 70%)',
+      } as any)
+    : ({ backgroundColor: 'rgba(' + rgb + ',0.14)' } as any);
+
+// The rings themselves are painted rather than stroked. A border is a hard
+// edge at both of its sides, which is what made them read as drawn circles
+// sitting on the screen instead of light leaving the dice. This is the same
+// band of colour with nothing to catch the eye at its edges: transparent until
+// 70% of the way out, strongest at 80%, gone again by 90%. `closest-side`
+// pins those percentages to the box's half-width, so the band sits at a
+// radius we can reason about rather than at a fraction of the diagonal.
+//
+// Native keeps the stroke, there being no gradient to fall back on.
+const RING_ALPHA = 0.55;
+const ringStyle = (rgb: string) =>
+  Platform.OS === 'web'
+    ? ({
+        backgroundImage:
+          'radial-gradient(circle closest-side, rgba(' + rgb + ',0) 70%, rgba(' + rgb + ',' +
+          RING_ALPHA + ') 80%, rgba(' + rgb + ',0) 90%)',
+      } as any)
+    : ({ borderWidth: 1.5, borderColor: 'rgba(' + rgb + ',' + RING_ALPHA + ')' } as any);
 
 export default function TabLayout() {
   const router = useRouter();
@@ -21,22 +56,50 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const keyboardOffset = useKeyboardOffset();
   const [shakeAnim] = useState(() => new Animated.Value(0));
+  // One clock for the whole bloom: the glow and both rings read their own
+  // stretch of it, which is what keeps them a quarter-beat apart without
+  // three animations to keep in step.
+  const [pulse] = useState(() => new Animated.Value(0));
   const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
 
   // Before the first roll, gently wiggle the dice every couple seconds to
-  // draw attention to it as the button to press.
+  // draw attention to it as the button to press. A bloom spreads out of it on
+  // the same beat — the same tap-ripple the tutorial's first step uses, so
+  // what the tutorial demonstrates and what the screen does are one gesture.
   useEffect(() => {
     if (randomTrigger > 0) return;
 
+    const NATIVE = Platform.OS !== 'web';
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.delay(1400),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.delay(1800),
+        // Roughly every two seconds rather than every three and a half: at the
+        // old pace the dice sat still long enough that someone glancing at the
+        // screen could easily never see it move.
+        Animated.delay(400),
+        // Animated.loop resets the animation, not the values it drove, so the
+        // clock has to be sent back to zero by hand or the second iteration
+        // starts from where the first one ended.
+        Animated.timing(pulse, { toValue: 0, duration: 0, useNativeDriver: NATIVE }),
+        Animated.parallel([
+          // Deliberately linear. Each ring slows down on its own, inside its
+          // own interpolation (see DiceRipple) — an easing here would bend the
+          // glow and both rings by one curve and leave the trailing ring
+          // crawling out of step with the one ahead of it.
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 1300,
+            easing: Easing.linear,
+            useNativeDriver: NATIVE,
+          }),
+          Animated.sequence([
+            Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: NATIVE }),
+            Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: NATIVE }),
+            Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: NATIVE }),
+            Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: NATIVE }),
+          ]),
+        ]),
+        Animated.delay(400),
       ])
     );
     idleLoopRef.current = loop;
@@ -45,8 +108,9 @@ export default function TabLayout() {
     return () => {
       loop.stop();
       shakeAnim.setValue(0);
+      pulse.setValue(0);
     };
-  }, [randomTrigger, shakeAnim]);
+  }, [randomTrigger, shakeAnim, pulse]);
 
   // Pressing the dice tab button does double duty as a tab and as the "roll"
   // action. If the dice tab isn't focused yet, this press is just navigation
@@ -85,13 +149,16 @@ export default function TabLayout() {
       }),
     ]).start();
 
-    triggerRandom();
+    // One frame later: rolling rebuilds most of the screen, and doing that
+    // synchronously inside the touch's own event means the DOM changes under a
+    // gesture the browser has not finished reporting.
+    requestAnimationFrame(() => triggerRandom());
   };
 
   const DiceImage = () => (
-    <Animated.View 
+    <Animated.View
       style={{
-        transform: [{ 
+        transform: [{
           rotate: shakeAnim.interpolate({
             inputRange: [-10, 10],
             outputRange: ['-10deg', '10deg']
@@ -99,13 +166,94 @@ export default function TabLayout() {
         }]
       }}
     >
-      <Image 
+      <Image
         source={require('@/assets/images/dice-static-small.png')}
         style={styles.diceImage}
         resizeMode="contain"
       />
     </Animated.View>
   );
+
+  // Before the first roll the dice is the only thing to press, so a ripple
+  // marks it — the hand-drawn arrow that used to point at it does not fit the
+  // step scaffold that replaced the old empty state.
+  //
+  // A single hard ring that held full strength the whole way out and then
+  // blinked off read as a circle being switched on and off. A wave is
+  // brightest where it is born and fainter the further it travels, so: each
+  // ring fades continuously across its whole trip, two of them run a quarter
+  // beat apart so there is always something in flight, and a soft bloom
+  // underneath keeps them from reading as bare outlines. They are also born at
+  // the dice's own edge now — 0.85 of a 100px box against an 83px dice -
+  // rather than at 0.7, which started them hidden underneath it.
+  const DiceRipple = () => {
+    // #35529D on #0A0A0A is too dark to register, the same reason the step
+    // numbers moved off the accent in dark mode.
+    const rgb = isDark ? BLOOM_DARK : BLOOM_LIGHT;
+    // Never unmounted — removing a child of the element being pressed is what
+    // left react-native-web's touch bookkeeping without the touch it was
+    // tracking. Held at zero opacity instead.
+    const live = showFirstRollCues;
+
+    const ring = (from: number, to: number, peak: number) => ({
+      opacity: live
+        ? pulse.interpolate({
+            inputRange: [from, from + 0.05, to],
+            outputRange: [0, peak, 0],
+            extrapolate: 'clamp' as const,
+          })
+        : 0,
+      transform: [
+        {
+          scale: pulse.interpolate({
+            // Quick out of the gate and slowing as it widens: the shape of
+            // something spending its energy, which a straight line is not.
+            inputRange: [from, from + 0.12, from + 0.3, to],
+            outputRange: [0.85, 1.25, 1.5, 1.7],
+            extrapolate: 'clamp' as const,
+          }),
+        },
+      ],
+    });
+
+    return (
+      <>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.diceGlow,
+            glowStyle(rgb),
+            {
+              opacity: live
+                ? pulse.interpolate({
+                    inputRange: [0, 0.1, 0.55],
+                    outputRange: [0, 1, 0],
+                    extrapolate: 'clamp' as const,
+                  })
+                : 0,
+              transform: [
+                {
+                  scale: pulse.interpolate({
+                    inputRange: [0, 0.55],
+                    outputRange: [0.9, 1.3],
+                    extrapolate: 'clamp' as const,
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.diceRipple, ringStyle(rgb), ring(0, 0.58, 0.9)]}
+        />
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.diceRipple, ringStyle(rgb), ring(0.26, 0.84, 0.55)]}
+        />
+      </>
+    );
+  };
 
   const TabIcon = ({ name, focused }: { name: 'settings-outline' | 'time-outline'; focused: boolean }) => {
     if (Platform.OS === 'web') {
@@ -138,10 +286,10 @@ export default function TabLayout() {
   };
 
   // Shown only on the dice tab, before the first roll — same condition
-  // HomeScreen uses for its own pre-roll hint (randomTrigger stays 0 in
-  // lockstep with useRandomWords' refreshKey, since both only advance off
-  // the same triggerRandom() call).
-  const showHowItWorksLink = pathname === '/' && randomTrigger === 0;
+  // HomeScreen uses to decide between a step's preview and its content
+  // (randomTrigger stays 0 in lockstep with useRandomWords' refreshKey, since
+  // both only advance off the same triggerRandom() call).
+  const showFirstRollCues = pathname === '/' && randomTrigger === 0;
 
   return (
     <View style={{ flex: 1 }}>
@@ -211,6 +359,7 @@ export default function TabLayout() {
                       activeOpacity={0.7}
                       style={styles.diceButtonWeb}
                     >
+                      <DiceRipple />
                       <DiceImage />
                     </TouchableOpacity>
                   </View>
@@ -220,6 +369,7 @@ export default function TabLayout() {
                 title: '',
                 tabBarIcon: () => (
                   <View style={styles.diceButtonMobile}>
+                    <DiceRipple />
                     <DiceImage />
                   </View>
                 ),
@@ -238,7 +388,7 @@ export default function TabLayout() {
       />
     </Tabs>
 
-      {showHowItWorksLink && (
+      {showFirstRollCues && (
         <TouchableOpacity
           onPress={() => { track(EVENTS.HOW_IT_WORKS_OPENED); setHowItWorksVisible(true); }}
           style={[styles.howItWorksLinkBelowDice, { bottom: Platform.OS === 'web' ? 2 : insets.bottom + 2 }]}
@@ -321,5 +471,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textDecorationLine: 'underline',
     fontFamily: Fonts.bodyRegular,
+  },
+  // 125 rather than 100 because the band sits at 80% of the half-width: 50px
+  // out from the centre, which is where the stroke used to be. The scales the
+  // rings travel through are unchanged, so they still begin at the dice's edge
+  // and end well clear of it.
+  diceRipple: {
+    position: 'absolute',
+    width: 125,
+    height: 125,
+    borderRadius: 62.5,
+  },
+  diceGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
 });
