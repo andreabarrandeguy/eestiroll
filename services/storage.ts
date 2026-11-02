@@ -138,13 +138,16 @@ export const StorageService = {
         }
     },
 
-    async loadLanguage(): Promise<Language> {
+    // Returns null when the user has never chosen, which is what lets the
+    // caller fall back to the browser's language. Returning DEFAULTS.language
+    // here made "never chose" and "chose English" indistinguishable.
+    async loadLanguage(): Promise<Language | null> {
         try {
             const saved = await withRetry(() => AsyncStorage.getItem(KEYS.LANGUAGE));
-            return (saved as Language) || DEFAULTS.language;
+            return (saved as Language) || null;
         } catch (error) {
             console.error('Error loading language:', error);
-            return DEFAULTS.language;
+            return null;
         }
     },
 

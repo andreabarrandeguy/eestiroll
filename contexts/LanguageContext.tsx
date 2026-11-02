@@ -1,4 +1,5 @@
-import { EVENTS, track } from '@/services/analytics';
+import { EVENTS, setLanguageSuperProperty, track } from '@/services/analytics';
+import { Platform } from 'react-native';
 import { fetchContent } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Language, LanguageOption } from '@/types';
@@ -19,12 +20,32 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// First visit only. The app ships in en/es/ru and a good share of its audience
+// is in Estonia, where Russian is common — everyone used to land on English
+// regardless, with the switch two taps deep behind an unlabelled gear.
+function detectLanguage(): Language {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined') return 'en';
+  const tags = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const tag of tags) {
+    const base = (tag || '').toLowerCase().split('-')[0];
+    if (base === 'es' || base === 'ru') return base;
+  }
+  return 'en';
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [availableLanguages, setAvailableLanguages] = useState<LanguageOption[]>([]);
   const [language, setLanguageState] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
 
   const loadContent = async () => {
+    // Outside the try: a failed content fetch used to skip this entirely, so
+    // the language the user had explicitly chosen was silently ignored.
+    const saved = await StorageService.loadLanguage();
+    const initial = saved ?? detectLanguage();
+    setLanguageState(initial);
+    setLanguageSuperProperty(initial);
+
     try {
       const content = await fetchContent();
       
@@ -36,12 +57,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       }));
 
       setAvailableLanguages(languages);
-
-      // Load saved language
-      const saved = await StorageService.loadLanguage();
-      if (saved) {
-        setLanguageState(saved);
-      }
     } catch (error) {
       console.error('Error loading languages, using fallback:', error);
       // Use hardcoded fallback
@@ -59,6 +74,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = async (newLanguage: Language) => {
     setLanguageState(newLanguage);
+    setLanguageSuperProperty(newLanguage);
     track(EVENTS.LANGUAGE_CHANGED, { language: newLanguage });
     
     try {
