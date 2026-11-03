@@ -12,21 +12,29 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const BLOOM_DARK = '144,169,228';   // theme.lightblue
-const BLOOM_LIGHT = '53,82,157';    // theme.accent
+// Each theme carries its own strength rather than the two sharing one number.
+// A dark blue on a light background loses contrast far faster than a light
+// blue does on a near-black one, so the alphas that read clearly in dark mode
+// left the rings all but invisible in light.
+const BLOOM = {
+  dark: { rgb: '144,169,228', ring: 0.55, glow: 0.4, glowMid: 0.12 },  // theme.lightblue
+  light: { rgb: '53,82,157', ring: 0.95, glow: 0.22, glowMid: 0.07 },  // theme.accent
+};
+type Bloom = typeof BLOOM.dark;
 
 // A soft bloom under the dice, so the rings read as light coming off the
 // button rather than two wireframe circles drawn around it. React Native has
 // no radial gradient, but react-native-web passes backgroundImage straight
 // through to CSS; everywhere else this degrades to a flat translucent disc,
 // which is the same idea with harder edges.
-const glowStyle = (rgb: string) =>
+const glowStyle = (b: Bloom) =>
   Platform.OS === 'web'
     ? ({
         backgroundImage:
-          'radial-gradient(circle, rgba(' + rgb + ',0.40) 0%, rgba(' + rgb + ',0.12) 45%, rgba(' + rgb + ',0) 70%)',
+          'radial-gradient(circle, rgba(' + b.rgb + ',' + b.glow + ') 0%, rgba(' + b.rgb + ',' +
+          b.glowMid + ') 45%, rgba(' + b.rgb + ',0) 70%)',
       } as any)
-    : ({ backgroundColor: 'rgba(' + rgb + ',0.14)' } as any);
+    : ({ backgroundColor: 'rgba(' + b.rgb + ',' + b.glowMid + ')' } as any);
 
 // The rings themselves are painted rather than stroked. A border is a hard
 // edge at both of its sides, which is what made them read as drawn circles
@@ -37,15 +45,14 @@ const glowStyle = (rgb: string) =>
 // radius we can reason about rather than at a fraction of the diagonal.
 //
 // Native keeps the stroke, there being no gradient to fall back on.
-const RING_ALPHA = 0.55;
-const ringStyle = (rgb: string) =>
+const ringStyle = (b: Bloom) =>
   Platform.OS === 'web'
     ? ({
         backgroundImage:
-          'radial-gradient(circle closest-side, rgba(' + rgb + ',0) 70%, rgba(' + rgb + ',' +
-          RING_ALPHA + ') 80%, rgba(' + rgb + ',0) 90%)',
+          'radial-gradient(circle closest-side, rgba(' + b.rgb + ',0) 70%, rgba(' + b.rgb + ',' +
+          b.ring + ') 80%, rgba(' + b.rgb + ',0) 90%)',
       } as any)
-    : ({ borderWidth: 1.5, borderColor: 'rgba(' + rgb + ',' + RING_ALPHA + ')' } as any);
+    : ({ borderWidth: 1.5, borderColor: 'rgba(' + b.rgb + ',' + b.ring + ')' } as any);
 
 export default function TabLayout() {
   const router = useRouter();
@@ -189,7 +196,7 @@ export default function TabLayout() {
   const DiceRipple = () => {
     // #35529D on #0A0A0A is too dark to register, the same reason the step
     // numbers moved off the accent in dark mode.
-    const rgb = isDark ? BLOOM_DARK : BLOOM_LIGHT;
+    const bloom = isDark ? BLOOM.dark : BLOOM.light;
     // Never unmounted — removing a child of the element being pressed is what
     // left react-native-web's touch bookkeeping without the touch it was
     // tracking. Held at zero opacity instead.
@@ -222,7 +229,7 @@ export default function TabLayout() {
           pointerEvents="none"
           style={[
             styles.diceGlow,
-            glowStyle(rgb),
+            glowStyle(bloom),
             {
               opacity: live
                 ? pulse.interpolate({
@@ -245,11 +252,11 @@ export default function TabLayout() {
         />
         <Animated.View
           pointerEvents="none"
-          style={[styles.diceRipple, ringStyle(rgb), ring(0, 0.58, 0.9)]}
+          style={[styles.diceRipple, ringStyle(bloom), ring(0, 0.58, 0.9)]}
         />
         <Animated.View
           pointerEvents="none"
-          style={[styles.diceRipple, ringStyle(rgb), ring(0.26, 0.84, 0.55)]}
+          style={[styles.diceRipple, ringStyle(bloom), ring(0.26, 0.84, 0.55)]}
         />
       </>
     );
