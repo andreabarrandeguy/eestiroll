@@ -1,6 +1,7 @@
 import { AIShimmerIcon } from '@/components/AIShimmerIcon';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
+import { SentenceExamplePreview } from '@/components/SentenceExamplePreview';
 import { SentenceExamplesModal } from '@/components/SentenceExamplesModal';
 import { SignInPromptModal } from '@/components/SignInPromptModal';
 import { SkeletonLine } from '@/components/SkeletonLine';
@@ -16,7 +17,7 @@ import { useRandomWords } from '@/hooks/useRandomWords';
 import { useSignInPromptModal } from '@/hooks/useSignInPromptModal';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
-import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, ResponseParseError, SessionInvalidError } from '@/services/aiService';
+import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, ResponseParseError, SessionInvalidError, WordsNotAdjustedError } from '@/services/aiService';
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
 import { categoryColorMap } from '@/utils/wordData';
@@ -241,6 +242,57 @@ const AIErrorState = ({
   </View>
 );
 
+// Not an error state, so it carries none of the signals of one: no alert
+// icon, no retry (the same words would get the same answer), and the accent
+// colour rather than a warning. The only way forward is back to the sentence.
+const WordsNotAdjustedState = ({
+  theme,
+  t,
+  onEdit,
+  onExamples,
+}: {
+  theme: Theme;
+  t: (key: TranslationKey) => string;
+  onEdit: () => void;
+  onExamples: () => void;
+}) => (
+  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+    {/* A warning, not a tip. Nothing was corrected and nothing was scored, so
+        the screen has to read as "this didn't go through" rather than as an
+        aside someone can skip. Same orange the app already uses to pull
+        attention, which carries on both themes. */}
+    <Icon name="alert-circle-outline" size={36} color="#E95A35" />
+    <Text style={{ color: theme.text, fontSize: 16, fontFamily: Fonts.bodySemiBold, marginTop: 10, textAlign: 'center', maxWidth: 300 }}>
+      {t('wordsNotAdjustedTitle')}
+    </Text>
+    <Text style={{ color: theme.iconInactive, fontSize: 13, fontFamily: Fonts.bodyRegular, textAlign: 'center', marginTop: 6, maxWidth: 300 }}>
+      {t('wordsNotAdjustedSubtitle')}
+    </Text>
+    {/* On screen, not behind a tap. Someone who sent the words back unchanged
+        has just shown the shape of the game didn't land, so the worked example
+        is the one thing this view owes them — and a button reading "go read an
+        example" is a dead end dressed as an action. With the example already
+        here, the button can be what actually moves them on. */}
+    <SentenceExamplePreview onMore={onExamples} />
+    <TouchableOpacity
+      onPress={onEdit}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: theme.accent,
+        paddingHorizontal: 20,
+        paddingVertical: 11,
+        borderRadius: 999,
+        marginTop: 18,
+      }}
+    >
+      <Icon name="create-outline" size={16} color={theme.accentText} />
+      <Text style={{ color: theme.accentText, fontFamily: Fonts.bodyBold, fontSize: 14 }}>{t('editSentence')}</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { t, language } = useTranslations();
@@ -258,6 +310,7 @@ export default function HomeScreen() {
   const [aiResult, setAiResult] = useState<AICheckResponse | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
+  const [wordsNotAdjusted, setWordsNotAdjusted] = useState(false);
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
@@ -325,6 +378,7 @@ export default function HomeScreen() {
     setAiResult(null);
     setAiLoading(false);
     setAiError(false);
+    setWordsNotAdjusted(false);
     setWebInputHeight(BASE_INPUT_HEIGHT);
   }
 
@@ -420,6 +474,7 @@ export default function HomeScreen() {
     setLastSentence(sentenceToCheck);
     setAiResult(null);
     setAiError(false);
+    setWordsNotAdjusted(false);
     setAiLoading(true);
     Keyboard.dismiss();
     // Who switches to the feedback layout depends on the caller: a first send
@@ -449,14 +504,27 @@ export default function HomeScreen() {
         setInputMountKey(k => k + 1);
           setAiRemaining(0);
         setAiIsAuthenticated(e.isAuthenticated);
+      } else if (e instanceof WordsNotAdjustedError) {
+        // Deliberately not saved to History and not cleared from the input:
+        // there is nothing to look back on, and the sentence is what they are
+        // about to go fix.
+        track(EVENTS.AI_WORDS_NOT_ADJUSTED, { wordCount: words.length });
+        setAiRemaining(e.remaining);
+        setAiIsAuthenticated(e.isAuthenticated);
+        setWordsNotAdjusted(true);
       } else if (e instanceof SessionInvalidError) {
         console.error("AI check failed: invalid session, signing out", e);
         signOut().catch(() => {});
         track(EVENTS.AI_CHECK_FAILED, { reason: 'session_invalid' });
         setAiError(true);
       } else {
-        console.error("AI check failed:", e);
-        track(EVENTS.AI_CHECK_FAILED, aiErrorProperties(e));
+        const why = aiErrorProperties(e);
+        // Logged classified rather than raw: Safari prints a bare fetch
+        // rejection as a stack with no cause above it, so the one failure that
+        // turned up in testing said nothing at all about what had gone wrong.
+        // This is the same reading that goes to PostHog, in the console.
+        console.error('AI check failed:', JSON.stringify(why), e);
+        track(EVENTS.AI_CHECK_FAILED, why);
         setAiError(true);
       }
     } finally {
@@ -549,6 +617,7 @@ export default function HomeScreen() {
     setSentence(lastSentence);
     setShowingFeedback(false);
     setAiError(false);
+    setWordsNotAdjusted(false);
     setSending(false);
     setBecameCard(false);
     handoffStartedRef.current = false;
@@ -800,6 +869,12 @@ export default function HomeScreen() {
                   Platform.OS === 'web' && {
                     outlineStyle: 'none',
                     height: Math.min(webInputHeight, MAX_INPUT_HEIGHT),
+                    // `editable={false}` becomes `readOnly` on a <textarea>,
+                    // and a read-only textarea still takes focus and shows a
+                    // caret — so before the first roll the preview field
+                    // answered to a tap and looked live. On native, editable
+                    // already blocks focus; this is the web half of it.
+                    ...(hasWords ? null : { pointerEvents: 'none' as const }),
                   } as any
                 ]}
                 placeholder={t('enterSentence')}
@@ -946,7 +1021,21 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {showingFeedback && !aiError && (
+        {showingFeedback && !aiError && wordsNotAdjusted && (
+          <View style={styles.feedbackContainer}>
+            <WordsNotAdjustedState
+              theme={theme}
+              t={t}
+              onEdit={handleEditSentence}
+              onExamples={() => {
+                track(EVENTS.EXAMPLES_OPENED);
+                setExamplesModalVisible(true);
+              }}
+            />
+          </View>
+        )}
+
+        {showingFeedback && !aiError && !wordsNotAdjusted && (
           <View style={styles.feedbackContainer}>
             {/* While the answer is still coming, the sentence is on top — the
                 box that just travelled down the screen left it there. The score

@@ -35,6 +35,10 @@ export const EVENTS = {
     AI_CHECK_SUCCEEDED: 'ai_check_succeeded',
     AI_CHECK_FAILED: 'ai_check_failed',
     AI_LIMIT_REACHED: 'ai_limit_reached',
+    // Someone who sent the words back untouched never understood the game,
+    // which until now was indistinguishable from someone who understood it and
+    // wrote badly. The two need completely different fixes.
+    AI_WORDS_NOT_ADJUSTED: 'ai_words_not_adjusted',
     // The missing link between rolling and submitting: someone who rolled,
     // read the words and typed nothing used to be indistinguishable from
     // someone who rolled and closed the tab.

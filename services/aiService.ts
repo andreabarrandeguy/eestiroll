@@ -40,6 +40,7 @@ interface AICheckResponseRaw {
     remaining: number;
     limit?: number;
     is_authenticated?: boolean;
+    issue?: string;
 }
 
 export class DailyLimitError extends Error {
@@ -50,6 +51,25 @@ export class DailyLimitError extends Error {
     constructor(remaining: number, limit: number, isAuthenticated: boolean) {
         super("daily_limit");
         this.name = "DailyLimitError";
+        this.remaining = remaining;
+        this.limit = limit;
+        this.isAuthenticated = isAuthenticated;
+    }
+}
+
+// The rolled words, pasted back with nothing of the learner's own added. The
+// backend answers this without calling the model at all, so it is neither a
+// score nor a failure: it is the one case where what went wrong is the game
+// rather than the Estonian. Carries the quota so the counter stays right —
+// nothing was checked, so nothing was spent.
+export class WordsNotAdjustedError extends Error {
+    remaining: number;
+    limit: number;
+    isAuthenticated: boolean;
+
+    constructor(remaining: number, limit: number, isAuthenticated: boolean) {
+        super("words_not_adjusted");
+        this.name = "WordsNotAdjustedError";
         this.remaining = remaining;
         this.limit = limit;
         this.isAuthenticated = isAuthenticated;
@@ -108,6 +128,12 @@ export async function checkSentenceWithAI(
             // quota changes here don't silently affect that deployment.
             // See docs/backend-account-quota-spec.md.
             "X-Client-Platform": Platform.OS,
+            // What this build knows how to render. The backend withholds any
+            // answer shape listed here until a client asks for it, so a
+            // backend change can go live before the build that uses it
+            // without affecting whatever is already deployed. Comma-separated:
+            // add entries, never repurpose one.
+            "X-Client-Features": "words-not-adjusted",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(request),
@@ -139,6 +165,17 @@ export async function checkSentenceWithAI(
         throw new ResponseParseError(response.status, bodyText);
     }
     const isAuthenticated = raw.is_authenticated ?? !!token;
+
+    // Thrown rather than returned so it never reaches the scoring path, which
+    // would save it to History and count it as a check that happened.
+    if (raw.issue === "words_not_adjusted") {
+        throw new WordsNotAdjustedError(
+            raw.remaining ?? 0,
+            raw.limit ?? DAILY_LIMIT_FALLBACK,
+            isAuthenticated
+        );
+    }
+
     return {
         score: raw.score,
         validation: raw.validation,

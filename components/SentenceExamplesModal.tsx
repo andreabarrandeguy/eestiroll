@@ -3,44 +3,14 @@ import { Fonts } from '@/constants/Fonts';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
-import { Category, categoryColorMap } from '@/utils/wordData';
+import { EXAMPLE_ROLLED_WORDS, EXAMPLE_SENTENCES } from '@/utils/sentenceExamples';
+import { categoryColorMap } from '@/utils/wordData';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface SentenceExamplesModalProps {
   visible: boolean;
   onDismiss: () => void;
 }
-
-// One rolled-words scenario, shown once, then 3 different real sentences
-// built from it — demonstrates that the *same* rolled words can be
-// conjugated/declined into different sentences, rather than 3 disconnected
-// one-off examples that each needed their own rolled words.
-const ROLLED_WORDS: { category: Category; word: string }[] = [
-  { category: 'VERB', word: 'Minema' },
-  { category: 'PLACE', word: 'Park' },
-  { category: 'NOUN', word: 'Sõber' },
-];
-
-const EXAMPLE_SENTENCES: { et: string; en: string; es: string; ru: string }[] = [
-  {
-    et: 'Ma lähen oma sõbra parki.',
-    en: "I'm going to my friend's park.",
-    es: 'Voy al parque de mi amigo.',
-    ru: 'Я иду в парк моего друга.',
-  },
-  {
-    et: 'Ma ei saa minna, olen sõbraga pargis.',
-    en: "I can't go, I am at the park with a friend.",
-    es: 'No puedo ir, estoy en el parque con un amigo.',
-    ru: 'Я не могу пойти, я в парке с другом.',
-  },
-  {
-    et: 'Park on nii ilus. Lähme, sõber!',
-    en: "Park is so beautiful. Let's go, friend!",
-    es: '¡El parque es tan lindo! ¡Vamos, amigo!',
-    ru: 'Парк такой красивый. Пойдём, друг!',
-  },
-];
 
 export function SentenceExamplesModal({ visible, onDismiss }: SentenceExamplesModalProps) {
   const { theme } = useTheme();
@@ -66,7 +36,7 @@ export function SentenceExamplesModal({ visible, onDismiss }: SentenceExamplesMo
               {t('sentenceRolledWordsLabel')}
             </Text>
             <View style={styles.chipsRow}>
-              {ROLLED_WORDS.map((w) => (
+              {EXAMPLE_ROLLED_WORDS.map((w) => (
                 <View key={w.word} style={[styles.chip, { backgroundColor: categoryColorMap[w.category] }]}>
                   <Text style={styles.chipCategory}>{t(w.category as any)}</Text>
                   <Text style={styles.chipWord}>{w.word}</Text>
