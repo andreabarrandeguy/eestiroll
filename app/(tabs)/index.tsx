@@ -181,9 +181,9 @@ const AILoadingState = ({ theme, t }: { theme: Theme; t: (key: TranslationKey) =
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
       <Animated.View style={{ transform: [{ rotate }] }}>
-        <Icon name="sparkles-outline" size={16} color={theme.iconInactive} />
+        <Icon name="sparkles-outline" size={18} color={theme.iconInactive} />
       </Animated.View>
-      <Animated.Text style={{ opacity: fade, color: theme.iconInactive, fontSize: 13, fontFamily: Fonts.bodyMedium }}>
+      <Animated.Text style={{ opacity: fade, color: theme.iconInactive, fontSize: 15, fontFamily: Fonts.bodyMedium }}>
         {t(AI_LOADING_MESSAGE_KEYS[msgIndex])}
       </Animated.Text>
     </View>
@@ -1356,15 +1356,26 @@ export default function HomeScreen() {
                   from in here. Spell it out at the end of the answer, where
                   someone who has finished reading is looking anyway. */}
               {(aiResult || aiRemaining === 0) && (
-                <TouchableOpacity
-                  onPress={() => triggerRandom()}
-                  style={[styles.continueButton, { backgroundColor: theme.accent }]}
-                >
-                  <Icon name="refresh-outline" size={16} color={theme.accentText} />
-                  <Text style={[styles.continueButtonText, { color: theme.accentText }]}>
-                    {t('continueLearning')}
-                  </Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    onPress={() => triggerRandom()}
+                    style={[styles.continueButton, { backgroundColor: theme.accent }]}
+                  >
+                    <Icon name="refresh-outline" size={16} color={theme.accentText} />
+                    <Text style={[styles.continueButtonText, { color: theme.accentText }]}>
+                      {t('continueLearning')}
+                    </Text>
+                  </TouchableOpacity>
+                  {/* Under the button rather than up with the answer: pressing
+                      Continue learning is what spends the next one, so this is
+                      where the question comes up. Shown at zero too, which is
+                      the number someone most needs to see. */}
+                  {aiRemaining !== null && (
+                    <Text style={[styles.continueRemaining, { color: theme.iconInactive }]}>
+                      {t('remainingCorrections').replace('{n}', String(aiRemaining))}
+                    </Text>
+                  )}
+                </>
               )}
             </ScrollView>
           </View>
@@ -1536,7 +1547,7 @@ const styles = StyleSheet.create({
   },
   thinkingRow: {
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 20,
   },
   // Out of the flow while a send is in the air: the steps, the travelling box
   // and the send button all leave together, and none of them should be holding
@@ -1700,6 +1711,12 @@ const styles = StyleSheet.create({
   continueButtonText: {
     fontFamily: Fonts.bodyBold,
     fontSize: 14,
+  },
+  continueRemaining: {
+    alignSelf: 'center',
+    marginTop: 10,
+    fontSize: 12,
+    fontFamily: Fonts.bodyRegular,
   },
   scoreCard: {
     borderWidth: 2,
