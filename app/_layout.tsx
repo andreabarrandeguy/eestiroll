@@ -26,9 +26,13 @@ import { ThemeMode } from '@/constants/Colors';
 import { EVENTS, setPostHogInstance, track } from '@/services/analytics';
 import { StorageService } from '@/services/storage';
 import { useViewportPin } from '@/hooks/useViewportPin';
+import { silenceWebKitTouchNoise } from '@/utils/webkitTouchNoise';
 import { loadWordsFromAPI } from '@/utils/wordHelpers';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Image, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+
+// At module scope so it is in place before the first touch can happen.
+silenceWebKitTouchNoise();
 
 export const unstable_settings = {
   anchor: '(tabs)',
