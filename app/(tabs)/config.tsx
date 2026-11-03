@@ -3,6 +3,7 @@ import { HowItWorksModal } from '@/components/HowItWorksModal';
 import { Icon } from '@/components/Icon';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Theme } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
@@ -64,6 +65,7 @@ export default function ConfigScreen() {
   const { t } = useTranslations();
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
+  const { status: authStatus, email } = useAuth();
 
   const handleCategoriesPress = () => {
     router.push('/categories');
@@ -110,6 +112,31 @@ export default function ConfigScreen() {
           actually do something (see Fase 6 in the plan). */}
       <SectionLabel label={t('sectionApp')} theme={theme} first />
       <View style={[styles.settingsGroup, { backgroundColor: theme.cardBackground }]}>
+        {/* An account changes nothing about what the app gives you: the daily
+            allowance is the same signed in or out. What it changes is whose
+            allowance it is. Anonymous, the count belongs to the network
+            address, so a class sharing one wifi shares one set of checks;
+            signed in, each person has their own. */}
+        <SettingRow
+          icon="person-circle-outline"
+          label={t('account')}
+          onPress={() => router.push('/account')}
+          theme={theme}
+          rightComponent={
+            <View style={styles.rowRight}>
+              <Text
+                style={[styles.rowValue, { color: theme.iconInactive }]}
+                numberOfLines={1}
+              >
+                {authStatus === 'authenticated' ? (email ?? '') : t('signIn')}
+              </Text>
+              <Icon name="chevron-forward" size={20} color={theme.iconInactive} />
+            </View>
+          }
+        />
+
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
         <SettingRow
           icon="grid-outline"
           label={t('categories')}
@@ -229,6 +256,16 @@ const styles = StyleSheet.create({
   settingsGroup: {
     borderRadius: 12,
     overflow: 'hidden'
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  rowValue: {
+    fontSize: 13,
+    maxWidth: 160,
   },
   settingRow: {
     flexDirection: 'row',

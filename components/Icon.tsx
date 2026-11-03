@@ -259,6 +259,17 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
     </Svg>
   ),
 
+  // Account (head and shoulders in a ring, for the Configuration row that
+  // leads to signing in). Native falls through to the real Ionicons glyph;
+  // this is only what the web build draws.
+  'person-circle-outline': ({ size, color, strokeWidth = 1.4 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={strokeWidth} />
+      <Circle cx="12" cy="10" r="2.9" stroke={color} strokeWidth={strokeWidth} />
+      <Path d="M6.4 18.7a6.4 6.4 0 0 1 11.2 0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  ),
+
   // Ellipsis vertical (Android/Chrome overflow menu — used in the "Add to
   // Home Screen" tutorial step)
   'ellipsis-vertical': ({ size, color }) => (
