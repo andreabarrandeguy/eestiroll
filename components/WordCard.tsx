@@ -183,10 +183,16 @@ export const WordCard = React.memo(({
 
   return (
     <>
-      <Pressable 
+      <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}
         delayLongPress={500}
+        // react-native-web gives a Pressable tabIndex="0", which makes it a
+        // focus target, so tapping a card pulled focus off the sentence field.
+        // On iOS that starts the keyboard closing, and the refocus a
+        // double-tap does then lands mid-dismissal and is ignored — which is
+        // why the keyboard came up on one tapped word and not the next.
+        focusable={false}
       >
         <Animated.View 
           style={[

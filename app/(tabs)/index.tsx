@@ -355,6 +355,9 @@ export default function HomeScreen() {
   // box starts directly below the steps, which is their height.
   const cardTravel = FEEDBACK_TOP_MARGIN + cardBox.y - stepsHeight;
   const inputNodeRef = useRef<unknown>(null);
+  // Where the caret belongs once the field has re-rendered after a tapped word
+  // was inserted. See the layout effect that drains it.
+  const pendingCaretRef = useRef<number | null>(null);
   const sentenceStartedRef = useRef(false);
   const subscribeModal = useSubscribeModal();
   const signInPromptModal = useSignInPromptModal();
@@ -444,6 +447,22 @@ export default function HomeScreen() {
     if (measured > 0) setWebInputHeight(measured);
   }, [sentence, refreshKey, inputMountKey, sending]);
 
+  // Put the caret back where the tapped word left it. A word dropped into the
+  // middle of a sentence would otherwise push the caret to the end, so the
+  // next one landed in the wrong place and typing carried on somewhere else
+  // than where you were looking.
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const caret = pendingCaretRef.current;
+    if (caret == null) return;
+    pendingCaretRef.current = null;
+
+    const node: any = inputNodeRef.current;
+    if (node && typeof node.setSelectionRange === 'function') {
+      node.setSelectionRange(caret, caret);
+    }
+  }, [sentence]);
+
   const handleSentenceChange = (text: string) => {
     // Once per round, the moment the box stops being empty.
     if (!sentenceStartedRef.current && text.length > 0) {
@@ -454,11 +473,45 @@ export default function HomeScreen() {
   };
 
   const handleDoubleTap = (word: string) => {
-    const before = sentence.slice(0, cursorPosition);
-    const after = sentence.slice(cursorPosition);
-    const newSentence = before + word + after;
-    setSentence(newSentence);
-    setCursorPosition(cursorPosition + word.length);
+    const node: any = inputNodeRef.current;
+
+    // Read the caret off the field itself on web. `onSelectionChange` is wired
+    // for native only, so the tracked position had no relationship to where
+    // the caret actually was and every word landed at the end of whatever had
+    // been typed. Native has no selectionStart and does track it, so it keeps
+    // using the state.
+    const caret =
+      Platform.OS === 'web' && node && typeof node.selectionStart === 'number'
+        ? node.selectionStart
+        : cursorPosition;
+
+    const at = Math.max(0, Math.min(caret, sentence.length));
+    const before = sentence.slice(0, at);
+    const after = sentence.slice(at);
+
+    // Two words have to come out as two words. Only where there isn't already
+    // whitespace, so repeated taps don't pile up spaces.
+    const lead = before.length > 0 && !/\s$/.test(before) ? ' ' : '';
+    const trail = after.length > 0 && !/^\s/.test(after) ? ' ' : '';
+
+    const nextCaret = at + lead.length + word.length;
+    setSentence(before + lead + word + trail + after);
+    setCursorPosition(nextCaret);
+    // Applied after the field re-renders with the new text — setting it now
+    // would be overwritten by that render.
+    pendingCaretRef.current = nextCaret;
+
+    // Same bookkeeping typing gets, so a sentence built entirely by tapping
+    // still counts as one that was started.
+    if (!sentenceStartedRef.current) {
+      sentenceStartedRef.current = true;
+      track(EVENTS.SENTENCE_STARTED, { wordCount: words.length });
+    }
+
+    // Tapping the card took focus off the field, so the keyboard dropped and
+    // the next keystroke went nowhere. Putting it back inside the same gesture
+    // is also what lets a mobile browser reopen the keyboard at all.
+    if (node && typeof node.focus === 'function') node.focus();
   };
 
   const handleSelectionChange = (event: any) => {
