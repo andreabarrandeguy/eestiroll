@@ -37,8 +37,20 @@ const STRIPES = Platform.OS === 'web'
 // How many characters fit across a card at full size, measured against the
 // three-to-a-row layout. Kept a little under what actually fits, so a word
 // right at the edge shrinks slightly rather than risking a clip.
-const FITS_AT_FULL_SIZE = 11;
-const MIN_WORD_FONT_SIZE = 11;
+// How many characters fit on one line at the base size, which depends on how
+// wide the card is. The compact figure comes from the home's three-column row:
+// 350px of content, widened to 358 by the container's -4 margins, a third of
+// that is a 119px slot, less its 4px gutters and the card's own 10px padding
+// leaves about 91px of text. A bold face runs near 0.58em per character, so at
+// 16px nine characters is what safely fits and the tenth starts to crowd.
+//
+// Below that, the size scales down in proportion: a word twice the length gets
+// half the size, which keeps every word on the same line and the same width.
+const FITS_COMPACT = 9;
+const FITS_FULL = 11;
+// Rock bottom. The longest entries in the vocabulary — `mobiiltelefoni`,
+// `videoprojektor` — land here, and they still need to fit the 91px.
+const MIN_WORD_FONT_SIZE = 10;
 
 // `adjustsFontSizeToFit` is an iOS-only prop that react-native-web does not
 // implement, so on the web a long word was simply cut off. The size is worked
@@ -46,13 +58,13 @@ const MIN_WORD_FONT_SIZE = 11;
 // wrap point, so `mobiiltelefoni laadija` — the longest entry in the
 // vocabulary at 22 characters — is sized by `mobiiltelefoni` and takes two
 // lines, while a single long word like `videoprojektor` shrinks to fit one.
-function fitWordFontSize(word: string, base: number) {
+function fitWordFontSize(word: string, base: number, fitsAtFullSize: number) {
   const longestChunk = word
     .split(' ')
     .reduce((longest, part) => Math.max(longest, part.length), 0);
 
-  if (longestChunk <= FITS_AT_FULL_SIZE) return base;
-  return Math.max(MIN_WORD_FONT_SIZE, Math.round(base * (FITS_AT_FULL_SIZE / longestChunk)));
+  if (longestChunk <= fitsAtFullSize) return base;
+  return Math.max(MIN_WORD_FONT_SIZE, Math.round(base * (fitsAtFullSize / longestChunk)));
 }
 
 // Translations global cache
@@ -217,7 +229,7 @@ export const WordCard = React.memo(({
             style={[
               styles.cardText,
               compact && styles.cardTextCompact,
-              { fontSize: fitWordFontSize(word, compact ? 16 : 18) },
+              { fontSize: fitWordFontSize(word, compact ? 16 : 18, compact ? FITS_COMPACT : FITS_FULL) },
             ]}
             numberOfLines={2}
           >
