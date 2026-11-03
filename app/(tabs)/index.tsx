@@ -17,7 +17,7 @@ import { useRandomWords } from '@/hooks/useRandomWords';
 import { useSignInPromptModal } from '@/hooks/useSignInPromptModal';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
-import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, ResponseParseError, SessionInvalidError, WordsNotAdjustedError } from '@/services/aiService';
+import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, ResponseParseError, SessionInvalidError, suggestSentence, SuggestLimitError, WordsNotAdjustedError } from '@/services/aiService';
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
 import { categoryColorMap } from '@/utils/wordData';
@@ -311,6 +311,20 @@ export default function HomeScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
   const [wordsNotAdjusted, setWordsNotAdjusted] = useState(false);
+  // The sentence to translate, and what the card under step 2 is showing. One
+  // value rather than a flag each, because the four states are exclusive.
+  const [suggestion, setSuggestion] = useState('');
+  const [suggestState, setSuggestState] =
+    useState<'idle' | 'loading' | 'limit' | 'error'>('idle');
+  // Null until a request comes back with it: the allowances live on the
+  // backend and nothing here can know them before asking. So the counts
+  // appear once one has been spent, rather than being guessed at on load.
+  const [suggestRemaining, setSuggestRemaining] = useState<number | null>(null);
+  // The offer holds back a few seconds after the words land. Appearing with
+  // them reads as the app answering a question nobody has asked yet, and most
+  // people want a moment to look at what they got before being handed help.
+  const [offerReady, setOfferReady] = useState(false);
+  const [offerFade] = useState(() => new Animated.Value(0));
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
@@ -382,6 +396,10 @@ export default function HomeScreen() {
     setAiLoading(false);
     setAiError(false);
     setWordsNotAdjusted(false);
+    // The task belonged to the old words. Keeping it would leave a sentence
+    // on screen that cannot be built from what is now on the cards.
+    setSuggestion('');
+    setSuggestState('idle');
     setWebInputHeight(BASE_INPUT_HEIGHT);
   }
 
@@ -513,6 +531,61 @@ export default function HomeScreen() {
     // is also what lets a mobile browser reopen the keyboard at all.
     if (node && typeof node.focus === 'function') node.focus();
   };
+
+  useEffect(() => {
+    offerFade.setValue(0);
+    setOfferReady(false);
+    if (!hasWords) return;
+    const timer = setTimeout(() => {
+      setOfferReady(true);
+      Animated.timing(offerFade, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: NATIVE_DRIVER,
+      }).start();
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [hasWords, refreshKey, offerFade]);
+
+  const handleSuggest = useCallback(async () => {
+    if (suggestState === 'loading' || !hasWords) return;
+
+    setSuggestState('loading');
+    setSuggestion('');
+    track(EVENTS.SUGGEST_REQUESTED, { wordCount: words.length });
+
+    try {
+      const result = await suggestSentence({
+        words: words.map(w => ({
+          estonian: w.word,
+          translation: getWordTranslation(w.word, w.category, language),
+        })),
+        language: languageMap[language] || 'English',
+      });
+      setSuggestion(result.promptSentence);
+      setSuggestRemaining(result.remaining);
+      setSuggestState('idle');
+    } catch (e) {
+      if (e instanceof SuggestLimitError) {
+        track(EVENTS.SUGGEST_LIMIT_REACHED);
+        setSuggestRemaining(0);
+        setSuggestState('limit');
+      } else if (e instanceof SessionInvalidError) {
+        signOut().catch(() => {});
+        setSuggestState('error');
+      } else {
+        const why = aiErrorProperties(e);
+        console.error('Suggest failed:', JSON.stringify(why), e);
+        track(EVENTS.SUGGEST_FAILED, why);
+        setSuggestState('error');
+      }
+    }
+  }, [words, hasWords, language, suggestState, signOut]);
+
+  // Both the prompt box and the field below it key off this: the two are drawn
+  // as one shape only while there is something in the prompt.
+  const suggestCardVisible = hasWords && (!!suggestion || suggestState !== 'idle');
 
   const handleSelectionChange = (event: any) => {
     setCursorPosition(event.nativeEvent.selection.start);
@@ -824,6 +897,39 @@ export default function HomeScreen() {
               }
             />
 
+            {/* Above the field rather than in it: it stays readable while the
+                answer is being typed, which is the whole time it is useful. */}
+            {suggestCardVisible && (
+              <View style={[styles.suggestCard, { borderColor: theme.border }]}>
+                <View style={styles.suggestTopRow}>
+                  <Text style={[styles.suggestLabel, { color: theme.accent }]}>
+                    {t('suggestLabel')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => { setSuggestion(''); setSuggestState('idle'); }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Icon name="close" size={14} color={theme.iconInactive} />
+                  </TouchableOpacity>
+                </View>
+                {suggestState === 'loading' ? (
+                  <SkeletonLine width="80%" />
+                ) : suggestState === 'limit' ? (
+                  <Text style={[styles.suggestNote, { color: theme.iconInactive }]}>
+                    {t('suggestLimitReached')}
+                  </Text>
+                ) : suggestState === 'error' ? (
+                  <Text style={[styles.suggestNote, { color: theme.iconInactive }]}>
+                    {t('suggestError')}
+                  </Text>
+                ) : (
+                  <Text style={[styles.suggestSentence, { color: theme.text }]}>
+                    {suggestion}
+                  </Text>
+                )}
+              </View>
+            )}
+
           </Animated.View>
 
 
@@ -856,6 +962,13 @@ export default function HomeScreen() {
                   ? theme.border
                   : inputFocused ? '#3468DC' : theme.border,
                 marginTop: 0,
+                // Square where the two meet, so the prompt and the field it
+                // belongs to read as one box with a divider rather than two
+                // unrelated cards stacked up. Round again the moment a send
+                // starts, since the box leaves on its own from there.
+                ...(suggestCardVisible && !sending
+                  ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+                  : null),
                 // Through the descent the box keeps the field's exact
                 // dimensions — nothing about it should change while it is
                 // moving. It takes on the card's shape afterwards, together
@@ -982,7 +1095,12 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               )}
             </Animated.View>
-            {sentence.length > 0 && (
+            {/* One line under the field, never two: the send hint once there
+                is something to send, and before that the offer of a sentence
+                to translate. A bare icon in the step header said nothing about
+                what it did until you pressed it, and this is the moment the
+                question actually comes up. */}
+            {sentence.length > 0 ? (
               <Animated.Text
                 style={[
                   styles.sendHint,
@@ -990,8 +1108,52 @@ export default function HomeScreen() {
                 ]}
               >
                 {t('sendHint')}
+                {aiRemaining !== null
+                  ? '  ·  ' + t('remainingCount').replace('{n}', String(aiRemaining))
+                  : ''}
               </Animated.Text>
-            )}
+            ) : !sending ? (
+              // Present before the first roll as well, not only once there are
+              // words: the preview scaffold has to account for everything the
+              // real screen will hold, or step 3 drops by the height of this
+              // line the moment the dice land. Which is the one thing this
+              // screen was built not to do.
+              //
+              // So the line is always held and only the ink waits: invisible
+              // with no words to suggest from, and fading in a few seconds
+              // after they arrive, since offering help in the same instant
+              // answers a question nobody has asked yet.
+              <Animated.View
+                style={{ opacity: offerFade, alignSelf: 'flex-start' }}
+                pointerEvents={offerReady ? 'auto' : 'none'}
+              >
+                <TouchableOpacity
+                  onPress={handleSuggest}
+                  disabled={suggestState === 'loading'}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.suggestAskRow}
+                >
+                  <Icon
+                    name="sparkles-outline"
+                    size={14}
+                    color={suggestState === 'loading' ? theme.iconInactive : theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.suggestAsk,
+                      { color: suggestState === 'loading' ? theme.iconInactive : theme.accent },
+                    ]}
+                  >
+                    {t(suggestion ? 'suggestAnother' : 'suggestAsk')}
+                  </Text>
+                  {suggestRemaining !== null && (
+                    <Text style={[styles.remainingCount, { color: theme.iconInactive }]}>
+                      {t('remainingCount').replace('{n}', String(suggestRemaining))}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+            ) : null}
 
             {/* Step 3 is a drawing until send: then its header leaves with the
                 rest and its body slides down to clear the space the descending
@@ -1389,6 +1551,58 @@ const styles = StyleSheet.create({
   },
   landingPanel: {
     marginTop: FEEDBACK_TOP_MARGIN,
+  },
+  suggestCard: {
+    marginTop: 10,
+    marginBottom: 0,
+    // No bottom edge and no bottom corners: the field below closes the shape.
+    borderBottomWidth: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    // The dismiss icon makes the label row taller than the 10px label, so even
+    // padding left the sentence sitting low in the box. Less above it, more
+    // below, and the two read as evenly inset. Horizontal padding and radius
+    // match the field beneath so their text lines up on the same left edge.
+    paddingTop: 10,
+    paddingBottom: 13,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  suggestTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  suggestLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    fontFamily: Fonts.bodyBold,
+  },
+  suggestSentence: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontFamily: Fonts.bodySemiBold,
+  },
+  suggestAskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
+  },
+  suggestAsk: {
+    fontSize: 13,
+    fontFamily: Fonts.bodySemiBold,
+  },
+  remainingCount: {
+    fontSize: 11,
+    fontFamily: Fonts.bodyRegular,
+  },
+  suggestNote: {
+    fontSize: 13,
+    fontFamily: Fonts.bodyRegular,
   },
   reservedCard: {
     opacity: 0,

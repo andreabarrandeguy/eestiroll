@@ -3,6 +3,7 @@ import { getAccessToken } from './auth';
 import { EVENTS, track } from './analytics';
 
 const AI_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/check/";
+const SUGGEST_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/suggest/";
 
 // Fallback limit used only if the backend hasn't been updated yet to return
 // `limit`/`is_authenticated` itself. Accounts are hidden from the UI for
@@ -186,5 +187,88 @@ export async function checkSentenceWithAI(
         remaining: raw.remaining,
         limit: raw.limit ?? DAILY_LIMIT_FALLBACK,
         isAuthenticated,
+    };
+}
+
+export interface SuggestResponse {
+    promptSentence: string;
+    remaining: number;
+    limit: number;
+    isAuthenticated: boolean;
+}
+
+interface SuggestResponseRaw {
+    prompt_sentence: string;
+    remaining: number;
+    limit?: number;
+    is_authenticated?: boolean;
+}
+
+// Suggestions have their own daily allowance, separate from the corrections —
+// asking what to write costs nothing against the checks, since nothing was
+// checked. Its own error type so the UI can say which allowance ran out.
+export class SuggestLimitError extends Error {
+    remaining: number;
+    limit: number;
+
+    constructor(remaining: number, limit: number) {
+        super("suggest_limit");
+        this.name = "SuggestLimitError";
+        this.remaining = remaining;
+        this.limit = limit;
+    }
+}
+
+const SUGGEST_LIMIT_FALLBACK = 10;
+
+/**
+ * Asks for a sentence to translate, built from the words that came up.
+ *
+ * The answer comes back in the learner's own language, which is the whole
+ * point: it is the exercise, not the solution. The Estonian is still entirely
+ * theirs to write, so this can sit next to the field permanently without
+ * becoming a way to skip the work.
+ */
+export async function suggestSentence(request: {
+    words: { estonian: string; translation: string }[];
+    language: string;
+}): Promise<SuggestResponse> {
+    const token = await getAccessToken();
+    const response = await fetch(SUGGEST_API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Client-Platform": Platform.OS,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (response.status === 401) {
+        throw new SessionInvalidError();
+    }
+
+    if (response.status === 429) {
+        const raw: Partial<SuggestResponseRaw> = await response.json().catch(() => ({}));
+        throw new SuggestLimitError(raw.remaining ?? 0, raw.limit ?? SUGGEST_LIMIT_FALLBACK);
+    }
+
+    if (!response.ok) {
+        throw new HttpError(response.status);
+    }
+
+    const bodyText = await response.text();
+    let raw: SuggestResponseRaw;
+    try {
+        raw = JSON.parse(bodyText);
+    } catch {
+        throw new ResponseParseError(response.status, bodyText);
+    }
+
+    return {
+        promptSentence: raw.prompt_sentence,
+        remaining: raw.remaining,
+        limit: raw.limit ?? SUGGEST_LIMIT_FALLBACK,
+        isAuthenticated: raw.is_authenticated ?? !!token,
     };
 }

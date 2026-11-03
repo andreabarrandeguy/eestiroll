@@ -39,6 +39,11 @@ export const EVENTS = {
     // which until now was indistinguishable from someone who understood it and
     // wrote badly. The two need completely different fixes.
     AI_WORDS_NOT_ADJUSTED: 'ai_words_not_adjusted',
+    // Asking what to write is a different signal from writing badly: it says
+    // the words were understood and the sentence wasn't obvious.
+    SUGGEST_REQUESTED: 'suggest_requested',
+    SUGGEST_FAILED: 'suggest_failed',
+    SUGGEST_LIMIT_REACHED: 'suggest_limit_reached',
     // The missing link between rolling and submitting: someone who rolled,
     // read the words and typed nothing used to be indistinguishable from
     // someone who rolled and closed the tab.

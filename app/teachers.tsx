@@ -36,7 +36,7 @@ export default function TeachersScreen() {
   // The daily AI limit is counted per IP address, so a class on one school
   // Wi-Fi shares a handful of checks between all of them. Until that is keyed
   // per person, a group only works if the limit is raised for their address by
-  // hand — which is why the request form is the page's main action rather than
+  // hand, which is why the request form is the page's main action rather than
   // an afterthought under the contact line.
   const handleCopy = async () => {
     await Clipboard.setStringAsync(CONTACT_EMAIL);
@@ -61,19 +61,21 @@ export default function TeachersScreen() {
         </Section>
 
         <Section title="How a round works" theme={theme}>
-          {'1. Roll — the learner gets a random set of words, one per grammatical category (a verb, a noun, a place, and so on).\n\n'}
-          {'2. Write — they form a single sentence in Estonian using all of them, changing the word forms as needed.\n\n'}
-          {'3. Feedback — a score out of five, the one core issue, the rule behind it, and a corrected sentence.'}
+          {'1. Roll: the learner gets a random set of words, one per grammatical category (a verb, a noun, a place, and so on).\n\n'}
+          {'2. Write: they form a single sentence in Estonian using all of them, changing the word forms as needed. A learner who cannot get started can ask for a sentence in their own language to translate instead.\n\n'}
+          {'3. Feedback: a score out of five, the one core issue, the rule behind it, and a corrected sentence.'}
         </Section>
 
         <Section title="Using it in class" theme={theme}>
-          {'• Same roll, many answers. Project one roll and have the class write their own sentences, then compare — the same three words support very different correct sentences.\n\n'}
-          {'• Target a grammar point. The categories that get rolled are configurable, so you can bias rounds toward, say, places (locative cases) or time words.\n\n'}
+          {'• Same roll, many answers. Project one roll and have the class write their own sentences, then compare. The same three words support very different correct sentences.\n\n'}
+          {'• Target a grammar point. The categories in play are configurable, so a round can be weighted toward places for the locative cases, or toward time words.\n\n'}
+          {'• A way in for a learner who freezes. On request the app supplies a sentence in the learner\u2019s own language to translate, which turns an open composition into a translation task. The same grammar, without the blank page.\n\n'}
           {'• Homework with a record. Each learner’s submissions and the notes they received stay in History on their own device.'}
         </Section>
 
         <Section title="Practical details" theme={theme}>
-          {'• Free, and no account or install — it runs in a browser on a phone or a computer.\n\n'}
+          {'• Free, and it runs in a browser on a phone or a computer. Nothing to install, and an account is optional.\n\n'}
+          {'• Each learner gets three corrections and ten sentence suggestions a day.\n\n'}
           {'• The interface is available in English, Spanish and Russian. The practice itself is always Estonian.\n\n'}
           {'• Vocabulary is A1 by default, with an A2 setting.'}
         </Section>
@@ -81,9 +83,8 @@ export default function TeachersScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Get in touch</Text>
           <Text style={[styles.paragraph, { color: theme.text }]}>
-            AI feedback is limited per day to keep it free to run. If you are planning to
-            use it with a whole class, ask first so the limit can be raised for your group
-            instead of getting in the way.
+            The daily limits are what keep the app free to run. For a whole class they can
+            be raised. Request access below, and say how many learners to expect.
           </Text>
 
           <Pressable

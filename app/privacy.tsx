@@ -6,7 +6,7 @@ import { Stack } from 'expo-router';
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const LAST_UPDATED = 'November 2, 2026';
+const LAST_UPDATED = 'November 3, 2026';
 const CONTACT_EMAIL = 'andreabarrandeguy@gmail.com';
 
 function Section({ title, theme, children }: { title: string; theme: Theme; children: ReactNode }) {
@@ -36,11 +36,11 @@ export default function PrivacyScreen() {
 
         <Section title="Information Collected" theme={theme}>
           {'• Account information: if you choose to sign in, your email address is used to send a one-time login code and identify your account. The app works fully without an account.\n\n'}
-          {'• Practice content: the words and sentences you submit to get AI feedback are sent to the app’s server and, from there, to OpenAI to generate a correction. Feedback saved to your local history stays on your device.\n\n'}
+          {'• Practice content: the words and sentences you submit to get AI feedback are sent to the app’s server and, from there, to OpenAI to generate a correction. Asking for a sentence to translate sends only the words that came up, not anything you have written. Feedback saved to your local history stays on your device.\n\n'}
           {'• Usage data: PostHog is used to understand how the app is used (e.g. which screens are opened, how often people practice) so it can be improved. This is tied to an anonymous device ID, not your name or email. Precise or IP-based location is not collected.\n\n'}
-          {'• Rate limiting: your IP address is stored on the app’s server to count how many of the free daily AI checks have been used. It is not used to identify you, to determine your location, or for any other purpose.\n\n'}
+          {'• Rate limiting: to count how many of the free daily AI requests have been used, the app’s server stores your IP address, or your account identifier instead if you are signed in. Neither is used to identify you, to determine your location, or for any other purpose.\n\n'}
           {'• Newsletter: if you subscribe to updates, the email address you provide is stored for that purpose only.\n\n'}
-          {'• Messages you send: anything written in a feedback form is stored so it can be read and acted on. The teacher access form also asks for a name and an email address, which are stored for the same reason — so a reply can be sent about the request.'}
+          {'• Messages you send: anything written in a feedback form is stored so it can be read and acted on. The teacher access form also asks for a name and an email address, which are stored for the same reason, so a reply can be sent about the request.'}
         </Section>
 
         <Section title="How This Information Is Used" theme={theme}>
@@ -51,10 +51,10 @@ export default function PrivacyScreen() {
         </Section>
 
         <Section title="Who This Is Shared With" theme={theme}>
-          {'• OpenAI — processes the words/sentence you submit to generate feedback. It does not receive your email or identity.\n\n'}
-          {'• Supabase — stores account, subscriber and form-submission data securely.\n\n'}
-          {'• Resend — sends the one-time login code and newsletter emails on behalf of the app.\n\n'}
-          {'• PostHog — processes anonymous usage analytics.\n\n'}
+          {'• OpenAI: processes the words and sentences you submit, to generate feedback or a sentence to translate. It does not receive your email or identity.\n\n'}
+          {'• Supabase: stores account, subscriber and form-submission data securely.\n\n'}
+          {'• Resend: sends the one-time login code and newsletter emails on behalf of the app.\n\n'}
+          {'• PostHog: processes anonymous usage analytics.\n\n'}
           None of these services are permitted to use this data for their own purposes beyond providing the service to the app.
         </Section>
 

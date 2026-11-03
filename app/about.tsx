@@ -60,7 +60,7 @@ export default function AboutScreen() {
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [subscribeVisible, setSubscribeVisible] = useState(false);
 
-  const features: TranslationKey[] = ['aboutFeature1', 'aboutFeature2', 'aboutFeature3', 'aboutFeature4'];
+  const features: TranslationKey[] = ['aboutFeature1', 'aboutFeature2', 'aboutFeature3', 'aboutFeature4', 'aboutFeature5', 'aboutFeature6'];
 
   return (
     <>
@@ -87,8 +87,9 @@ export default function AboutScreen() {
 
         <SectionLabel label={t('aboutRoadmapTitle')} theme={theme} />
         <View style={[styles.listGroup, { backgroundColor: theme.cardBackground }]}>
-          <ListRow icon="time-outline" iconColor={theme.accent} text={t('aboutRoadmap1')} theme={theme} />
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          {/* The sentence-to-translate row lived here until it shipped. What
+              replaces it is whatever people ask for, which is what the row
+              below is for. */}
           <FeedbackListRow text={t('aboutRoadmap2')} theme={theme} onPress={() => setFeedbackVisible(true)} />
         </View>
 
