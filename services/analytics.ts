@@ -65,8 +65,6 @@ export const EVENTS = {
     SIGN_IN_COMPLETED: 'sign_in_completed',
     SIGN_OUT: 'sign_out',
     ACCOUNT_DELETED: 'account_deleted',
-    SIGN_IN_PROMPT_SHOWN: 'sign_in_prompt_shown',
-    SIGN_IN_PROMPT_DISMISSED: 'sign_in_prompt_dismissed',
     HOW_IT_WORKS_OPENED: 'how_it_works_opened',
     HOW_IT_WORKS_STEP: 'how_it_works_step',
     HOW_IT_WORKS_COMPLETED: 'how_it_works_completed',

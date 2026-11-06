@@ -3,7 +3,10 @@ import React from 'react';
 import { Platform, ViewStyle } from 'react-native';
 import Svg, { Circle, Ellipse, Line, Path, Rect } from 'react-native-svg';
 
-type IconName = keyof typeof Ionicons.glyphMap;
+// 'crown' is the one name here that Ionicons has no glyph for. It is drawn
+// below and listed in CUSTOM_ICON_NAMES, which is what makes it render from
+// our own SVG on native as well as on web.
+type IconName = keyof typeof Ionicons.glyphMap | 'crown';
 
 interface IconProps {
   name: IconName;
@@ -14,6 +17,23 @@ interface IconProps {
 
 // SVG Components for Web
 const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWidth?: number }>> = {
+  // Crown (unlimited access). Five points with the jewels filled, which is
+  // what keeps it from reading as a plain zigzag at 14px.
+  'crown': ({ size, color, strokeWidth = 1.5 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4.5 18 L3 8.5 L7.5 12.5 L12 6 L16.5 12.5 L21 8.5 L19.5 18 Z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <Circle cx={3} cy={7.2} r={1} fill={color}/>
+      <Circle cx={12} cy={4.9} r={1.1} fill={color}/>
+      <Circle cx={21} cy={7.2} r={1} fill={color}/>
+    </Svg>
+  ),
+
   // Settings (helm wheel — a cross between a gear and a ship's wheel, for
   // the tab bar's own identity rather than a generic Ionicons gear)
   'settings-outline': ({ size, color, strokeWidth = 1.3 }) => (
@@ -315,7 +335,7 @@ const SVGIcons: Record<string, React.FC<{ size: number; color: string; strokeWid
 // Custom-drawn icons with no real Ionicons equivalent (the tab bar's helm
 // wheel and pocket watch) — rendered from our own SVG on every platform,
 // not just web, since react-native-svg works natively too.
-const CUSTOM_ICON_NAMES = new Set(['settings-outline', 'time-outline']);
+const CUSTOM_ICON_NAMES = new Set<string>(['settings-outline', 'time-outline', 'crown']);
 
 export function Icon({ name, size, color, style }: IconProps) {
   if (Platform.OS === 'web' || CUSTOM_ICON_NAMES.has(name)) {
@@ -328,5 +348,7 @@ export function Icon({ name, size, color, style }: IconProps) {
     return null;
   }
 
-  return <Ionicons name={name} size={size} color={color} style={style} />;
+  // The cast is safe: the only name that is not an Ionicons glyph is 'crown',
+  // and that one is in CUSTOM_ICON_NAMES, so it returned above.
+  return <Ionicons name={name as keyof typeof Ionicons.glyphMap} size={size} color={color} style={style} />;
 }

@@ -117,7 +117,7 @@ ${notes.trim() || '(no extra notes)'}`;
               {/* Promises a reply and nothing else: whether the limit can
                   actually be raised for a given group is decided by hand, and
                   this screen is in no position to commit to it. */}
-              <Text style={[styles.title, { color: theme.text }]}>Thanks — request sent</Text>
+              <Text style={[styles.title, { color: theme.text }]}>Thanks, request sent</Text>
               <Text style={[styles.subtitle, { color: theme.text }]}>
                 You will be receiving updates via email soon.
               </Text>

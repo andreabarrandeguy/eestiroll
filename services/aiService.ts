@@ -4,6 +4,7 @@ import { EVENTS, track } from './analytics';
 
 const AI_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/check/";
 const SUGGEST_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/suggest/";
+const ME_API_URL = "https://eestiroll.eu.pythonanywhere.com/api/me/";
 
 // Fallback limit used only if the backend hasn't been updated yet to return
 // `limit`/`is_authenticated` itself. Accounts are hidden from the UI for
@@ -112,6 +113,40 @@ export class ResponseParseError extends Error {
         this.bodyLength = body.length;
         this.bodyPreview = body.slice(0, 200);
     }
+}
+
+export interface CallerStatus {
+    isAuthenticated: boolean;
+    isVip: boolean;
+}
+
+// Its own request so a screen can ask who is asking without spending a
+// correction to find out. The unlimited-access flag used to arrive only
+// alongside the answer to a check, which left every other screen unable to
+// know it at all.
+export async function fetchCallerStatus(): Promise<CallerStatus> {
+    const token = await getAccessToken();
+
+    const response = await fetch(ME_API_URL, {
+        method: "GET",
+        headers: {
+            "X-Client-Platform": Platform.OS,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+    });
+
+    if (!response.ok) {
+        throw new HttpError(response.status);
+    }
+
+    const raw: { is_authenticated?: boolean; is_vip?: boolean } = await response
+        .json()
+        .catch(() => ({}));
+
+    return {
+        isAuthenticated: raw.is_authenticated ?? !!token,
+        isVip: raw.is_vip ?? false,
+    };
 }
 
 export async function checkSentenceWithAI(

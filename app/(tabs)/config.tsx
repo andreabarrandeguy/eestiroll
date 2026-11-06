@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useVipStatus } from '@/hooks/useVipStatus';
 import { EVENTS, track } from '@/services/analytics';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -66,6 +67,7 @@ export default function ConfigScreen() {
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
   const { status: authStatus, email } = useAuth();
+  const isVip = useVipStatus();
 
   const handleCategoriesPress = () => {
     router.push('/categories');
@@ -124,6 +126,7 @@ export default function ConfigScreen() {
           theme={theme}
           rightComponent={
             <View style={styles.rowRight}>
+              {isVip ? <Icon name="crown" size={15} color={theme.gold} /> : null}
               <Text
                 style={[styles.rowValue, { color: theme.iconInactive }]}
                 numberOfLines={1}

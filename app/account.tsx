@@ -4,6 +4,7 @@ import { Theme } from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useVipStatus } from '@/hooks/useVipStatus';
 import { EVENTS, track } from '@/services/analytics';
 import { InvalidCodeError, OtpRateLimitError } from '@/services/auth';
 import { Stack, useRouter } from 'expo-router';
@@ -29,6 +30,7 @@ export default function AccountScreen() {
   const { theme } = useTheme();
   const { t } = useTranslations();
   const { status, email: sessionEmail, sendOtp, verifyOtp, signOut, deleteAccount } = useAuth();
+  const isVip = useVipStatus();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -141,6 +143,12 @@ export default function AccountScreen() {
       <Icon name="person-circle-outline" size={48} color={theme.accent} />
       <Text style={[styles.signedInLabel, { color: theme.iconInactive }]}>{t('signedInAs')}</Text>
       <Text style={[styles.signedInEmail, { color: theme.text }]}>{sessionEmail}</Text>
+      {isVip ? (
+        <View style={[styles.vipPill, { backgroundColor: theme.gold + '20' }]}>
+          <Icon name="crown" size={16} color={theme.gold} />
+          <Text style={[styles.benefitText, { color: theme.gold }]}>{t('unlimitedAccess')}</Text>
+        </View>
+      ) : null}
       <View style={[styles.benefitPill, { backgroundColor: theme.accent + '20' }]}>
         <Icon name="checkmark-circle" size={16} color={theme.accent} />
         <Text style={[styles.benefitText, { color: theme.accent }]}>{t('signInBenefit')}</Text>
@@ -342,6 +350,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 999,
     marginBottom: 24,
+  },
+  // The same pill with less air under it, so when both are shown they read as
+  // one stack rather than two unrelated blocks.
+  vipPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    marginBottom: 8,
   },
   benefitText: {
     fontSize: 13,

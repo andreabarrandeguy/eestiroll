@@ -26,6 +26,9 @@ export const DarkTheme = {
     // CategoryColors.yellow so the PLACE/NOUN word-card color isn't affected.
     accent: '#35529D',
     accentText: '#FFFFFF',
+    // Unlimited access (the crown). Not CategoryColors.yellow: that one is a
+    // word-card color and changing it would move the cards with it.
+    gold: '#E8B84B',
     ...CategoryColors
 } as const;
 
@@ -39,6 +42,9 @@ export const LightTheme = {
     iconInactive: '#999',
     accent: '#35529D',
     accentText: '#FFFFFF',
+    // Darker than the dark theme's: the same gold on a white card reads as
+    // pale yellow and loses the contrast a 13px label needs.
+    gold: '#8C6508',
     ...CategoryColors
 } as const;
 

@@ -3,7 +3,6 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { Icon } from '@/components/Icon';
 import { SentenceExamplePreview } from '@/components/SentenceExamplePreview';
 import { SentenceExamplesModal } from '@/components/SentenceExamplesModal';
-import { SignInPromptModal } from '@/components/SignInPromptModal';
 import { SkeletonLine } from '@/components/SkeletonLine';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { getWordTranslation, WordCard, WordCardPlaceholder } from '@/components/WordCard';
@@ -14,9 +13,9 @@ import { useHistory } from '@/contexts/HistoryContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRandom } from '@/contexts/RandomContext';
 import { useRandomWords } from '@/hooks/useRandomWords';
-import { useSignInPromptModal } from '@/hooks/useSignInPromptModal';
 import { useSubscribeModal } from '@/hooks/useSubscribeModal';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useVipStatus } from '@/hooks/useVipStatus';
 import { AICheckResponse, checkSentenceWithAI, DailyLimitError, HttpError, ResponseParseError, SessionInvalidError, suggestSentence, SuggestLimitError, WordsNotAdjustedError } from '@/services/aiService';
 import { EVENTS, track } from '@/services/analytics';
 import { TranslationKey } from '@/utils/translations';
@@ -328,7 +327,7 @@ export default function HomeScreen() {
   const [showingFeedback, setShowingFeedback] = useState(false);
   const [lastSentence, setLastSentence] = useState('');
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
-  const [aiIsAuthenticated, setAiIsAuthenticated] = useState(false);
+  const isVip = useVipStatus();
   const [aiReportVisible, setAiReportVisible] = useState(false);
   const [inputMountKey, setInputMountKey] = useState(0);
   const [examplesModalVisible, setExamplesModalVisible] = useState(false);
@@ -374,7 +373,6 @@ export default function HomeScreen() {
   const pendingCaretRef = useRef<number | null>(null);
   const sentenceStartedRef = useRef(false);
   const subscribeModal = useSubscribeModal();
-  const signInPromptModal = useSignInPromptModal();
   const { signOut } = useAuth();
   const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
 
@@ -615,7 +613,6 @@ export default function HomeScreen() {
       setAiResult(result);
       track(EVENTS.AI_CHECK_SUCCEEDED, { score: result.score, remaining: result.remaining });
       setAiRemaining(result.remaining);
-      setAiIsAuthenticated(result.isAuthenticated);
       addEntry(words, sentenceToCheck, result);
       subscribeModal.onAICheckSuccess();
       setSentence('');
@@ -629,14 +626,12 @@ export default function HomeScreen() {
         setSentence('');
         setInputMountKey(k => k + 1);
           setAiRemaining(0);
-        setAiIsAuthenticated(e.isAuthenticated);
       } else if (e instanceof WordsNotAdjustedError) {
         // Deliberately not saved to History and not cleared from the input:
         // there is nothing to look back on, and the sentence is what they are
         // about to go fix.
         track(EVENTS.AI_WORDS_NOT_ADJUSTED, { wordCount: words.length });
         setAiRemaining(e.remaining);
-        setAiIsAuthenticated(e.isAuthenticated);
         setWordsNotAdjusted(true);
       } else if (e instanceof SessionInvalidError) {
         console.error("AI check failed: invalid session, signing out", e);
@@ -1108,7 +1103,7 @@ export default function HomeScreen() {
                 ]}
               >
                 {t('sendHint')}
-                {aiRemaining !== null
+                {aiRemaining !== null && !isVip
                   ? '  ·  ' + t('remainingCount').replace('{n}', String(aiRemaining))
                   : ''}
               </Animated.Text>
@@ -1146,11 +1141,13 @@ export default function HomeScreen() {
                   >
                     {t(suggestion ? 'suggestAnother' : 'suggestAsk')}
                   </Text>
-                  {suggestRemaining !== null && (
+                  {isVip ? (
+                    <Icon name="crown" size={12} color={theme.gold} />
+                  ) : suggestRemaining !== null ? (
                     <Text style={[styles.remainingCount, { color: theme.iconInactive }]}>
                       {t('remainingCount').replace('{n}', String(suggestRemaining))}
                     </Text>
-                  )}
+                  ) : null}
                 </TouchableOpacity>
               </Animated.View>
             ) : null}
@@ -1289,7 +1286,7 @@ export default function HomeScreen() {
               </ScoreCardEntrance>
             ) : aiRemaining === 0 ? (
               <Text style={{ color: '#E95A35', fontSize: 16, fontFamily: Fonts.bodySemiBold, textAlign: 'center' }}>
-                {t(aiIsAuthenticated ? 'dailyLimitReachedAuth' : 'dailyLimitReachedAnon')}
+                {t('dailyLimitReached')}
               </Text>
             ) : (
               <AIScoreSkeleton />
@@ -1333,13 +1330,7 @@ export default function HomeScreen() {
                     </>
                   )}
                 </>
-              ) : aiRemaining === 0 ? (
-                <View style={{ alignItems: 'center', marginTop: 20 }}>
-                  <Text style={{ color: theme.text, fontSize: 14, fontFamily: Fonts.bodyRegular, textAlign: 'center', marginTop: 10, opacity: 0.7 }}>
-                    {t('savedToHistory')}
-                  </Text>
-                </View>
-              ) : (
+              ) : aiRemaining === 0 ? null : (
                 <>
                   <View style={styles.thinkingRow}>
                     <AILoadingState theme={theme} t={t} />
@@ -1370,11 +1361,18 @@ export default function HomeScreen() {
                       Continue learning is what spends the next one, so this is
                       where the question comes up. Shown at zero too, which is
                       the number someone most needs to see. */}
-                  {aiRemaining !== null && (
+                  {isVip ? (
+                    <View style={styles.continueVipRow}>
+                      <Icon name="crown" size={15} color={theme.gold} />
+                      <Text style={[styles.continueVipText, { color: theme.gold }]}>
+                        {t('unlimitedAccess')}
+                      </Text>
+                    </View>
+                  ) : aiRemaining !== null ? (
                     <Text style={[styles.continueRemaining, { color: theme.iconInactive }]}>
                       {t('remainingCorrections').replace('{n}', String(aiRemaining))}
                     </Text>
-                  )}
+                  ) : null}
                 </>
               )}
             </ScrollView>
@@ -1413,11 +1411,6 @@ export default function HomeScreen() {
         source="ai_result"
         word={lastSentence}
         context={{ words, sentence: lastSentence, aiResult }}
-      />
-      <SignInPromptModal
-        visible={signInPromptModal.visible}
-        onDismiss={signInPromptModal.onDismiss}
-        onSignIn={signInPromptModal.hide}
       />
       <SentenceExamplesModal
         visible={examplesModalVisible}
@@ -1717,6 +1710,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 12,
     fontFamily: Fonts.bodyRegular,
+  },
+  // The row carries the spacing the single line used to, so the crown and the
+  // words sit on one baseline instead of each holding its own margin.
+  continueVipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  continueVipText: {
+    fontSize: 13,
+    fontFamily: Fonts.bodyMedium,
   },
   scoreCard: {
     borderWidth: 2,
